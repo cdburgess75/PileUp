@@ -1,0 +1,12 @@
+{
+  "name": "pileup",
+  "version": "2026.6.4",
+  "description": "POTA & SOTA live spots and QSO log",
+  "private": true,
+  "scripts": {
+    "test": "node test/smoke.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
+  }
+}
