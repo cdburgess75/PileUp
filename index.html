@@ -98,8 +98,8 @@
       position:sticky;top:0;height:100vh;background:var(--nav-bg);
       border-right:1px solid var(--line);box-shadow:2px 0 8px rgba(0,0,0,.3);
       padding:14px 0 24px;gap:2px;overflow-y:auto;}
-    .snav-brand{display:block;font-size:8px;letter-spacing:.3em;color:var(--amber);text-align:center;
-      line-height:1.6;padding:0 4px 13px;border-bottom:1px solid var(--line);margin-bottom:8px;}
+    .snav-brand{display:block;font-size:7px;letter-spacing:.2em;color:var(--amber);text-align:center;
+      padding:0 4px 13px;border-bottom:1px solid var(--line);margin-bottom:8px;}
     .snav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;
       padding:11px 4px;background:none;border:none;color:var(--ink-dim);
       font-family:var(--mono);font-size:7px;letter-spacing:.1em;text-transform:uppercase;
@@ -126,7 +126,7 @@
   .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 11px;}
   .chip{background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);font-family:var(--mono);
     font-size:10.5px;letter-spacing:.08em;padding:6px 11px;border-radius:20px;cursor:pointer;}
-  .chip.on{color:#000;background:var(--amber);border-color:var(--amber);font-weight:700;}
+  .chip.on{color:#fff;background:var(--amber);border-color:var(--amber);font-weight:700;}
   .bchip{background:transparent;border:1px solid var(--bc,var(--line));color:var(--bc,var(--ink-dim));
     font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:5px 10px;
     border-radius:20px;cursor:pointer;transition:.15s;flex-shrink:0;}
@@ -145,7 +145,7 @@
   .count{font-size:10px;letter-spacing:.18em;color:var(--ink-dim);text-transform:uppercase;margin:2px 2px 8px;}
   .count b{color:var(--amber);}
 
-  .btn{display:inline-block;background:var(--amber);color:#1a1206;border:none;font-family:var(--mono);
+  .btn{display:inline-block;background:var(--amber);color:#fff;border:none;font-family:var(--mono);
     font-weight:700;font-size:12px;letter-spacing:.1em;padding:11px 15px;border-radius:8px;
     cursor:pointer;text-transform:uppercase;}
   .btn.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);font-weight:500;}
@@ -156,13 +156,14 @@
   .rows{display:flex;flex-direction:column;gap:6px;}
   .row{display:grid;grid-template-columns:84px 1fr auto;gap:10px;align-items:center;
     background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 11px;}
-  .row.stale{opacity:.45;}
+  .row.stale{opacity:.55;}
   .spotrow{cursor:pointer;}
   .spotrow:active{border-color:var(--amber-dim);background:var(--panel2);}
   .freq{font-size:18px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;line-height:1.05;}
   .freq .u{display:block;font-size:8px;letter-spacing:.18em;color:var(--ink-dim);font-weight:500;margin-top:2px;}
   .mid .st{font-size:13.5px;color:var(--ink);line-height:1.25;}
   .mid .meta{font-size:10px;color:var(--ink-dim);margin-top:3px;letter-spacing:.03em;}
+  .logentry .mid .meta{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .badge{display:inline-block;font-size:7.5px;letter-spacing:.1em;padding:1px 4px;border-radius:3px;
     border:1px solid var(--amber-dim);color:var(--amber);margin-left:5px;vertical-align:middle;}
   .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
@@ -178,6 +179,10 @@
   .act.log{font-size:9px;letter-spacing:.1em;border:1px solid var(--amber-dim);border-radius:4px;
     padding:2px 5px;text-transform:uppercase;color:var(--amber);}
 
+  .nav-badge{display:inline-block;background:var(--amber);color:#fff;font-size:6.5px;font-weight:700;
+    min-width:13px;height:13px;border-radius:7px;text-align:center;line-height:13px;
+    padding:0 3px;margin-left:3px;vertical-align:middle;}
+  .nav-badge:empty{display:none;}
   .empty{text-align:center;color:var(--ink-dim);font-size:12px;padding:34px 10px;line-height:1.7;letter-spacing:.04em;}
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:11px;}
@@ -203,7 +208,7 @@
     box-shadow:0 -10px 30px rgba(0,0,0,.6);}
   .sheet h3{margin:0 0 12px;font-size:12px;letter-spacing:.18em;color:var(--amber);text-transform:uppercase;}
 
-  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--green);color:#06170c;
+  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--amber);color:#fff;
     font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 16px;border-radius:20px;z-index:80;
     opacity:0;transition:.25s;pointer-events:none;text-transform:uppercase;}
   .toast.show{opacity:1;}
@@ -215,9 +220,9 @@
 <body>
 <div id="layout">
 <nav class="sidenav" id="sideNav">
-  <div class="snav-brand">PILE<br>UP</div>
+  <div class="snav-brand"><span style="font-size:18px;display:block;margin-bottom:4px">◎</span>PileUp</div>
   <button class="snav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
-  <button class="snav-btn" data-tab="log"><span class="bicon">✦</span>Log</button>
+  <button class="snav-btn" data-tab="log"><span class="bicon">✦</span>Log<span class="nav-badge" id="logBadgeDesktop"></span></button>
   <button class="snav-btn" data-tab="tools"><span class="bicon">⚙</span>Tools</button>
 </nav>
 <div class="wrap">
@@ -255,7 +260,8 @@
     <div class="chips" id="spotBandChips" style="margin-top:-5px"></div>
     <div class="ctrl">
       <input type="search" id="spotFilter" placeholder="filter call / ref / summit / state…" autocomplete="off">
-      <button class="btn sm" id="spotRefresh" title="refresh" style="min-width:46px">⟳</button>
+      <button class="btn ghost sm" id="sortBtn" title="Sort spots">≡ Freq</button>
+      <button class="btn sm" id="spotRefresh" aria-label="Refresh spots">⟳ Refresh</button>
     </div>
     <div class="count" id="spotCount"></div>
     <div class="rows" id="spotRows"></div>
@@ -320,8 +326,8 @@
   <div class="sheet">
     <h3 id="logTitle">◆ Log entry</h3>
     <div class="formgrid">
-      <label>Date (UTC)<input type="text" id="lgDate"></label>
-      <label>Time UTC<input type="text" id="lgTime" placeholder="1530"></label>
+      <label>Date (UTC)<input type="text" id="lgDate" autocomplete="off"></label>
+      <label>Time UTC<input type="text" id="lgTime" placeholder="1530" autocomplete="off"></label>
       <label>Freq kHz<input type="number" id="lgFreq" inputmode="decimal"></label>
       <label>Mode<input type="text" id="lgMode" placeholder="SSB / CW / FT8"></label>
       <label>Callsign<input type="text" id="lgStation"></label>
@@ -334,6 +340,7 @@
     <div class="btnrow">
       <button class="btn" id="lgSave">Save</button>
       <button class="btn ghost" id="lgCancel">Cancel</button>
+      <button class="btn ghost sm" id="lgDelete" style="color:var(--red);border-color:var(--red);margin-left:auto;display:none">✕ Delete</button>
     </div>
   </div>
 </div>
@@ -343,7 +350,7 @@
 <!-- bottom nav -->
 <nav class="bottomnav" id="bottomNav">
   <button class="bnav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
-  <button class="bnav-btn" data-tab="log"><span class="bicon">✦</span>Log</button>
+  <button class="bnav-btn" data-tab="log"><span class="bicon">✦</span>Log<span class="nav-badge" id="logBadgeMobile"></span></button>
   <button class="bnav-btn" data-tab="tools"><span class="bicon">⚙</span>Tools</button>
 </nav>
 
@@ -369,7 +376,7 @@ const BAND_COLOR={
 const K={prefs:"pileup_prefs_v1",log:"pileup_log_v1",geo:"pileup_geo_v1",
          pota:"pileup_pota_v1",sota:"pileup_sota_v1"};
 function loadJSON(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
-function saveJSON(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){}}
+function saveJSON(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){if(e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")toast("Storage full — data not saved");}}
 
 let GEO=loadJSON(K.geo,{lat:30.61,lng:-90.36,label:""});
 let PREFS=loadJSON(K.prefs,{call:"",theme:"",zoom:1,hr24:true});
@@ -377,6 +384,8 @@ let LOG=loadJSON(K.log,[]);
 let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0})};
 let spotProg="pota",spotMode="all",spotBand="all",spotStatus="";
 let editIdx=-1;
+let spotSort="freq";
+const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0}};
 
 /* ============ helpers ============ */
 const pad=n=>String(n).padStart(2,"0");
@@ -409,6 +418,7 @@ let _wakeLock=null;
 function applyTheme(t){
   document.documentElement.dataset.theme=t||"";
   PREFS.theme=t||"";saveJSON(K.prefs,PREFS);
+  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=t==="light"?"#F9FBFF":"#000000";
   document.querySelectorAll("[data-theme-btn]").forEach(b=>b.classList.toggle("on",b.dataset.themeBtn===(t||"")));
 }
 function applyZoom(z){
@@ -476,8 +486,8 @@ async function refreshSpots(){
   let data=null;try{data=await getSpots(prog);}catch(e){}
   if(data){const list=(prog==="pota"?normPota:normSota)(data).filter(s=>isFinite(s.freq)&&s.freq>0);
     SPOTS[prog]={list,ts:Date.now()};saveJSON(K[prog],SPOTS[prog]);
-    if(prog===spotProg)spotStatus="";}
-  else if(prog===spotProg)spotStatus="failed";
+    if(prog===spotProg)spotStatus="";_spotMeta[prog].failCount=0;_spotMeta[prog].failTs=0;}
+  else if(prog===spotProg){spotStatus="failed";_spotMeta[prog].failCount++;_spotMeta[prog].failTs=Date.now();}
   setSpotSpin(false);if(prog===spotProg)renderSpots();
 }
 function openSpots(force){renderSpots();const pack=SPOTS[spotProg]||{ts:0};
@@ -527,7 +537,7 @@ function renderSpots(){
     if(spotBand!=="all"&&hamBandOf(s.freq)!==spotBand)return false;
     if(f&&!(s.call+" "+s.ref+" "+s.name+" "+s.loc+" "+s.mode).toLowerCase().includes(f))return false;
     return true;
-  }).sort((a,b)=>a.freq-b.freq);
+  }).sort((a,b)=>spotSort==="age"?+new Date(b.when)-+new Date(a.when):a.freq-b.freq);
   renderBandChips();
   const lab=document.getElementById("spotCount"),el=document.getElementById("spotRows");
   const fresh=pack.ts?ageStr(pack.ts):null;
@@ -566,7 +576,7 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   document.getElementById("logModal").hidden=false;}
 function saveLog(){
   const o={date:document.getElementById("lgDate").value.trim(),
-    time:document.getElementById("lgTime").value.trim(),
+    time:document.getElementById("lgTime").value.trim().replace(/:/g,""),
     freq:document.getElementById("lgFreq").value.trim(),
     mode:document.getElementById("lgMode").value.trim(),
     station:document.getElementById("lgStation").value.trim(),
@@ -593,12 +603,15 @@ function renderLog(){
     const badge=o.mode?'<span class="badge">'+esc(o.mode)+'</span>':'';
     const rst=(o.rst_sent&&o.rst_rcvd)?o.rst_sent+'/'+o.rst_rcvd:(o.rst_sent||"");
     const meta=[esc(o.date)+' '+esc(o.time)+'Z',o.ref?esc(o.ref):'',rst?'RST '+esc(rst):'',o.notes?esc(o.notes):''].filter(Boolean).join(' · ');
-    return '<div class="row"><div class="freq">'+(o.freq?fmtFreq(+o.freq):"—")+
+    return '<div class="row logentry"><div class="freq">'+(o.freq?fmtFreq(+o.freq):"—")+
       '<span class="u">'+(o.freq?freqUnit(+o.freq):'kHz')+'</span></div>'+
       '<div class="mid"><div class="st">'+esc(o.station||"(no callsign)")+badge+'</div>'+
       '<div class="meta">'+meta+'</div></div>'+
       '<div class="right"><span class="act log" data-act="editlog" data-id="'+o.created+'">edit</span>'+
-      '<span class="act log" data-act="dellog" data-id="'+o.created+'">del</span></div></div>';}).join("");}
+      '<span class="act log" data-act="dellog" data-id="'+o.created+'">del</span></div></div>';}).join("");
+  const bc=LOG.length?String(LOG.length):"";
+  const bm=document.getElementById("logBadgeMobile"),bd=document.getElementById("logBadgeDesktop");
+  if(bm)bm.textContent=bc;if(bd)bd.textContent=bc;}
 function exportLogCSV(){
   if(!LOG.length){toast("Log is empty");return;}
   const rows=[["date_utc","time_utc","freq_khz","mode","callsign","reference","rst_sent","rst_rcvd","notes"]];
@@ -670,8 +683,12 @@ document.addEventListener("click",ev=>{
   else if(a==="editlog"){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id),o=LOG[i];if(!o)return;
     openLog({date:o.date,time:o.time,freq:o.freq,mode:o.mode,station:o.station,
       rst:o.rst_sent||"",rst_rcvd:o.rst_rcvd||"",ref:o.ref,notes:o.notes},i);}
-  else if(a==="dellog"){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id);if(i<0)return;
-    LOG.splice(i,1);saveJSON(K.log,LOG);renderLog();toast("Deleted");}
+  else if(a==="dellog"){
+    if(t.dataset.confirm){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id);if(i<0)return;
+      LOG.splice(i,1);saveJSON(K.log,LOG);renderLog();toast("Deleted");}
+    else{t.dataset.confirm="1";t.textContent="sure?";t.style.color="var(--red)";t.style.borderColor="var(--red)";
+      setTimeout(()=>{if(t.dataset.confirm){delete t.dataset.confirm;t.textContent="del";t.style.color="";t.style.borderColor="";}},2500);}
+  }
 });
 
 document.getElementById("newLog").addEventListener("click",()=>openLog());
