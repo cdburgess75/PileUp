@@ -14,7 +14,7 @@ PileUp is a single-file progressive web app for amateur radio operators who chas
 - Live POTA spots from `api.pota.app` and SOTA spots from `sota.org.uk`
 - Automatic refresh every 60 seconds (pauses when tab is hidden or after repeated failures)
 - Filter by mode (All / CW / Phone / Data), band chip, or free-text search
-- Sort by frequency or age
+- Sort by frequency or age — filter settings and sort order persist across reloads
 - Distance and bearing to each activation from your home coordinates
 - Spots older than 45 minutes shown at reduced opacity
 - Spots cached on-device — last fetch survives a reload
