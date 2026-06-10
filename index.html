@@ -168,6 +168,7 @@
     border:1px solid var(--amber-dim);color:var(--amber);margin-left:5px;vertical-align:middle;}
   .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
   .time{font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;opacity:.75;}
+  .dist{font-size:9px;color:var(--ink-dim);letter-spacing:.05em;}
   .tag{font-size:8px;letter-spacing:.14em;padding:2px 6px;border-radius:4px;text-transform:uppercase;
     border:1px solid var(--line);color:var(--ink-dim);}
   .tag.band{background:transparent;border:1.5px solid var(--bc,var(--blue));color:var(--bc,var(--blue));
@@ -379,12 +380,12 @@ function loadJSON(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v
 function saveJSON(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){if(e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")toast("Storage full — data not saved");}}
 
 let GEO=loadJSON(K.geo,{lat:30.61,lng:-90.36,label:""});
-let PREFS=loadJSON(K.prefs,{call:"",theme:"",zoom:1,hr24:true});
+let PREFS=loadJSON(K.prefs,{call:"",theme:"",zoom:1,hr24:true,spotBand:"all",spotMode:"all",spotSort:"freq"});
 let LOG=loadJSON(K.log,[]);
 let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0})};
-let spotProg="pota",spotMode="all",spotBand="all",spotStatus="";
+let spotProg="pota",spotMode=PREFS.spotMode||"all",spotBand=PREFS.spotBand||"all",spotStatus="";
 let editIdx=-1;
-let spotSort="freq";
+let spotSort=PREFS.spotSort||"freq";
 const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0}};
 
 /* ============ helpers ============ */
@@ -402,6 +403,13 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 function attr(s){return String(s).replace(/"/g,"&quot;").replace(/&/g,"&amp;");}
 function ageStr(ms){const s=Math.max(0,Date.now()-ms)/1000;if(s<60)return"now";
   const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h+"h "+(m%60)+"m";}
+function haversine(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function bearing(la1,lo1,la2,lo2){const dLo=(lo2-lo1)*Math.PI/180;
+  const y=Math.sin(dLo)*Math.cos(la2*Math.PI/180);
+  const x=Math.cos(la1*Math.PI/180)*Math.sin(la2*Math.PI/180)-Math.sin(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.cos(dLo);
+  return(Math.atan2(y,x)*180/Math.PI+360)%360;}
 
 /* ============ ident ============ */
 function renderIdent(){
@@ -473,12 +481,14 @@ async function getSpots(prog){
 }
 function normPota(d){return d.map(x=>({freq:parseFloat(x.frequency),call:x.activator||"",ref:x.reference||"",
   name:x.name||x.parkName||"",mode:(x.mode||"").toUpperCase(),when:new Date((x.spotTime||"")+"Z"),
-  comments:x.comments||"",loc:x.locationDesc||""}));}
+  comments:x.comments||"",loc:x.locationDesc||"",
+  lat:parseFloat(x.latitude),lng:parseFloat(x.longitude)}));}
 function normSota(d){return d.map(x=>{let ref=x.summitCode||"";
   if(x.associationCode&&!ref.includes("/"))ref=x.associationCode+"/"+ref;
   return{freq:parseFloat(x.frequency)*1000,call:x.activatorCallsign||x.activator||"",ref,
     name:x.summitDetails||x.summitName||"",mode:(x.mode||"").toUpperCase(),
-    when:new Date(x.timeStamp),comments:x.comments||"",loc:x.associationCode||""};});}
+    when:new Date(x.timeStamp),comments:x.comments||"",loc:x.associationCode||"",
+    lat:parseFloat(x.summitLat||x.latitude),lng:parseFloat(x.summitLng||x.longitude)};});}
 async function refreshSpots(){
   const prog=spotProg;setSpotSpin(true);
   if(!navigator.onLine){spotStatus="offline";setSpotSpin(false);renderSpots();return;}
@@ -502,12 +512,17 @@ function spotRowHTML(s){
   const da='data-act="spotlog" data-f="'+attr(Math.round(s.freq))+'" data-call="'+attr(s.call)+
     '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"';
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+'"':'';
+  let distStr='';
+  if(isFinite(s.lat)&&isFinite(s.lng)){
+    const km=Math.round(haversine(GEO.lat,GEO.lng,s.lat,s.lng));
+    const bear=Math.round(bearing(GEO.lat,GEO.lng,s.lat,s.lng));
+    distStr='<span class="dist">'+km+' km · '+bear+'°</span>';}
   return '<div class="row spotrow'+(stale?' stale':'')+'" '+da+'>'+
     '<div class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></div>'+
     '<div class="mid"><div class="st">'+esc(s.call||"?")+md+'</div>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+cmt+'</div>'+
     '<div class="right">'+(band?'<span class="tag band" '+bc+'>'+band+'</span>':'<span class="tag">--</span>')+
-    '<span class="time">'+age+'</span>'+
+    '<span class="time">'+age+'</span>'+distStr+
     '<span class="acts"><span class="act log">＋ log</span></span></div></div>';
 }
 function renderBandChips(){
@@ -525,7 +540,8 @@ function renderBandChips(){
 }
 document.getElementById("spotBandChips").addEventListener("click",ev=>{
   const c=ev.target.closest("[data-sb]");if(!c)return;
-  spotBand=c.dataset.sb;renderBandChips();renderSpots();
+  spotBand=c.dataset.sb;PREFS.spotBand=spotBand;saveJSON(K.prefs,PREFS);
+  renderBandChips();renderSpots();
 });
 function renderSpots(){
   const prog=spotProg,PROG=prog.toUpperCase(),pack=SPOTS[prog]||{list:[],ts:0};
@@ -559,7 +575,9 @@ function renderSpots(){
 }
 
 /* ============ logbook ============ */
-function closeLog(){editIdx=-1;document.getElementById("lgSave").textContent="Save";document.getElementById("logModal").hidden=true;}
+function closeLog(){editIdx=-1;document.getElementById("lgSave").textContent="Save";
+  const ld=document.getElementById("lgDelete");if(ld)ld.style.display="none";
+  document.getElementById("logModal").hidden=true;}
 function openLog(pre,idx){pre=pre||{};const d=new Date();
   editIdx=(typeof idx==="number")?idx:-1;
   document.getElementById("lgSave").textContent=editIdx>=0?"Update":"Save";
@@ -573,6 +591,7 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   document.getElementById("lgRstR").value=pre.rst_rcvd||"";
   document.getElementById("lgRef").value=pre.ref||"";
   document.getElementById("lgNotes").value=pre.notes||"";
+  const ld=document.getElementById("lgDelete");if(ld)ld.style.display=editIdx>=0?"":"none";
   document.getElementById("logModal").hidden=false;}
 function saveLog(){
   const o={date:document.getElementById("lgDate").value.trim(),
@@ -593,7 +612,9 @@ function logFromSpot(t){
     call=t.dataset.call||"",ref=t.dataset.ref||"",name=t.dataset.name||"",f=t.dataset.f||"";
   const rst=/CW|FT8|FT4|RTTY|JS8|PSK|DATA|DIG|JT/i.test(mode)?"599":"59";
   const notes=[prog+" "+ref+(name?" — "+name:""),f?(+f/1000).toFixed(3)+" MHz":"",mode].filter(Boolean).join(" · ");
-  openLog({title:"◆ Log "+(call||ref),freq:f,mode,station:call,ref,rst,notes});}
+  const today=new Date().toISOString().slice(0,10);
+  const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
+  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes});}
 function renderLog(){
   const el=document.getElementById("logRows");
   const list=LOG.map((o,i)=>({o,i})).sort((a,b)=>b.o.created-a.o.created);
@@ -670,11 +691,22 @@ document.querySelectorAll("#seg-spots button").forEach(b=>b.addEventListener("cl
   document.querySelectorAll("#seg-spots button").forEach(x=>x.classList.toggle("on",x===b));
   openSpots(true);}));
 document.querySelectorAll("#spotChips .chip").forEach(c=>c.addEventListener("click",()=>{
-  spotMode=c.dataset.sm;
+  spotMode=c.dataset.sm;PREFS.spotMode=spotMode;saveJSON(K.prefs,PREFS);
   document.querySelectorAll("#spotChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderSpots();}));
 document.getElementById("spotFilter").addEventListener("input",renderSpots);
 document.getElementById("spotRefresh").addEventListener("click",refreshSpots);
+document.getElementById("sortBtn").addEventListener("click",()=>{
+  spotSort=spotSort==="freq"?"age":"freq";PREFS.spotSort=spotSort;saveJSON(K.prefs,PREFS);
+  document.getElementById("sortBtn").textContent=spotSort==="freq"?"≡ Freq":"≡ Age";
+  renderSpots();});
+document.getElementById("lgDelete").addEventListener("click",()=>{
+  if(editIdx<0)return;const entry=LOG[editIdx];if(!entry)return;
+  LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();toast("Deleted");});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden||document.getElementById("tab-spots").hidden||!navigator.onLine)return;
+  const pack=SPOTS[spotProg]||{ts:0};if(Date.now()-pack.ts>60000)refreshSpots();});
 
 document.addEventListener("click",ev=>{
   const t=ev.target.closest("[data-act]");if(!t)return;
@@ -736,8 +768,14 @@ document.getElementById("hr24Toggle").checked=PREFS.hr24!==false;
 document.getElementById("geoLat").value=GEO.lat;
 document.getElementById("geoLng").value=GEO.lng;
 renderIdent();renderLog();
+document.querySelectorAll("#spotChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.sm===spotMode));
+document.getElementById("sortBtn").textContent=spotSort==="freq"?"≡ Freq":"≡ Age";
 tick();setInterval(tick,1000);
-setInterval(()=>{if(!document.getElementById("tab-spots").hidden&&navigator.onLine)refreshSpots();},60000);
+setInterval(()=>{
+  if(document.hidden||!navigator.onLine||document.getElementById("tab-spots").hidden)return;
+  const m=_spotMeta[spotProg];
+  if(m.failCount>0&&Date.now()-m.failTs<Math.min(m.failCount*2,10)*60000)return;
+  refreshSpots();},60000);
 openSpots();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 </script>
