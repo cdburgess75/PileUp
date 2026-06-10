@@ -71,8 +71,3 @@ The entire app lives in `index.html` (HTML + CSS + JS). `sw.js` handles service-
 
 GitHub Pages deploys automatically from the `main` branch root.
 
----
-
-## Companion app
-
-[SkyWave](https://cdburgess75.github.io/SkyWave/) — shortwave band guide
