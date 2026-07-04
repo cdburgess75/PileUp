@@ -1,9 +1,9 @@
-const CACHE = "pileup-2026.07.04b";
+const CACHE = "pileup-2026.07.04c";
 const SHELL = [
   "/PileUp/",
   "/PileUp/index.html",
   "/PileUp/icons/icon.svg",
-  "/PileUp/icons/icon-180.png",
+  "/PileUp/icons/apple-touch-icon.png",
   "/PileUp/icons/icon-192.png",
   "/PileUp/icons/icon-512.png",
   "/PileUp/manifest.webmanifest"
