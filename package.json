@@ -1,6 +1,6 @@
 {
   "name": "pileup",
-  "version": "2026.6.15",
+  "version": "2026.7.4",
   "description": "POTA & SOTA live spots and QSO log",
   "private": true,
   "scripts": {
