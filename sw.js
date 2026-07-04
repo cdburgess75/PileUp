@@ -1,8 +1,11 @@
-const CACHE = "pileup-2026.06.10";
+const CACHE = "pileup-2026.06.15";
 const SHELL = [
   "/PileUp/",
   "/PileUp/index.html",
   "/PileUp/icons/icon.svg",
+  "/PileUp/icons/icon-180.png",
+  "/PileUp/icons/icon-192.png",
+  "/PileUp/icons/icon-512.png",
   "/PileUp/manifest.webmanifest"
 ];
 
