@@ -176,6 +176,10 @@
   .row.stale{opacity:.55;}
   .spotrow{cursor:pointer;}
   .spotrow:active{border-color:var(--amber-dim);background:var(--panel2);}
+  .spotrow.worked{opacity:.62;}
+  .spotrow.worked .callsign{text-decoration:line-through;text-decoration-color:var(--green);text-decoration-thickness:2px;}
+  .wkd{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.1em;padding:1px 5px;border-radius:3px;
+    border:1px solid var(--green-dim);color:var(--green);margin-left:6px;vertical-align:middle;text-transform:uppercase;}
   .freq{font-size:21px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;line-height:1.05;}
   .freq .u{display:block;font-size:9px;letter-spacing:.18em;color:var(--ink-dim);font-weight:500;margin-top:2px;}
   .mid .st{font-size:16px;font-weight:700;color:var(--ink);line-height:1.25;letter-spacing:.01em;}
@@ -381,7 +385,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.04c";
+const VERSION="2026.07.04d";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -411,6 +415,7 @@ let spotProg="pota",spotMode=PREFS.spotMode||"all",spotBand=PREFS.spotBand||"all
 let editIdx=-1;
 let spotSort=PREFS.spotSort||"freq";
 const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0}};
+let _worked=new Set();
 
 /* ============ helpers ============ */
 const pad=n=>String(n).padStart(2,"0");
@@ -542,9 +547,11 @@ function spotRowHTML(s){
     const km=Math.round(haversine(GEO.lat,GEO.lng,s.lat,s.lng));
     const bear=Math.round(bearing(GEO.lat,GEO.lng,s.lat,s.lng));
     distStr='<span class="dist">'+km+' km · '+bear+'°</span>';}
-  return '<div class="row spotrow'+(stale?' stale':'')+'" '+da+'>'+
+  const worked=_worked.has((s.call||"").toUpperCase().trim());
+  const wkd=worked?'<span class="wkd">✓ worked</span>':'';
+  return '<div class="row spotrow'+(stale?' stale':'')+(worked?' worked':'')+'" '+da+'>'+
     '<div class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></div>'+
-    '<div class="mid"><div class="st">'+esc(s.call||"?")+md+'</div>'+
+    '<div class="mid"><div class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+wkd+'</div>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+cmt+'</div>'+
     '<div class="right">'+(band?'<span class="tag band" '+bc+'>'+band+'</span>':'<span class="tag">--</span>')+
     '<span class="time">'+age+'</span>'+distStr+
@@ -570,6 +577,8 @@ document.getElementById("spotBandChips").addEventListener("click",ev=>{
 });
 function renderSpots(){
   const prog=spotProg,PROG=prog.toUpperCase(),pack=SPOTS[prog]||{list:[],ts:0};
+  const today=new Date().toISOString().slice(0,10);
+  _worked=new Set(LOG.filter(e=>e.station&&e.date===today).map(e=>e.station.toUpperCase().trim()));
   const f=document.getElementById("spotFilter").value.trim().toLowerCase();
   const list=(pack.list||[]).filter(s=>{
     if(spotMode==="cw"&&s.mode!=="CW")return false;
@@ -631,7 +640,7 @@ function saveLog(){
     created:Date.now()};
   if(!o.freq&&!o.station){toast("Add a frequency or callsign");return;}
   if(editIdx>=0){o.created=LOG[editIdx].created;LOG[editIdx]=o;}else{LOG.push(o);}
-  saveJSON(K.log,LOG);closeLog();renderLog();toast(editIdx>=0?"Updated":"Logged");}
+  saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(editIdx>=0?"Updated":"Logged");}
 function logFromSpot(t){
   const prog=(t.dataset.prog||spotProg).toUpperCase(),mode=t.dataset.md||"",
     call=t.dataset.call||"",ref=t.dataset.ref||"",name=t.dataset.name||"",f=t.dataset.f||"";
@@ -728,7 +737,7 @@ document.getElementById("sortBtn").addEventListener("click",()=>{
   renderSpots();});
 document.getElementById("lgDelete").addEventListener("click",()=>{
   if(editIdx<0)return;const entry=LOG[editIdx];if(!entry)return;
-  LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();toast("Deleted");});
+  LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast("Deleted");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden||document.getElementById("tab-spots").hidden||!navigator.onLine)return;
@@ -743,7 +752,7 @@ document.addEventListener("click",ev=>{
       rst:o.rst_sent||"",rst_rcvd:o.rst_rcvd||"",ref:o.ref,notes:o.notes},i);}
   else if(a==="dellog"){
     if(t.dataset.confirm){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id);if(i<0)return;
-      LOG.splice(i,1);saveJSON(K.log,LOG);renderLog();toast("Deleted");}
+      LOG.splice(i,1);saveJSON(K.log,LOG);renderLog();renderSpots();toast("Deleted");}
     else{t.dataset.confirm="1";t.textContent="sure?";t.style.color="var(--red)";t.style.borderColor="var(--red)";
       setTimeout(()=>{if(t.dataset.confirm){delete t.dataset.confirm;t.textContent="del";t.style.color="";t.style.borderColor="";}},2500);}
   }
