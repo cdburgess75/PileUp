@@ -292,6 +292,9 @@
       <button class="btn ghost sm" id="expLog">Export CSV</button>
       <button class="btn ghost sm" id="expAdif">Export ADIF</button>
     </div>
+    <div class="ctrl">
+      <input type="search" id="logFilter" placeholder="search call / ref / mode / band / date…" autocomplete="off">
+    </div>
     <div class="count" id="logCount"></div>
     <div class="rows" id="logRows"></div>
   </section>
@@ -385,7 +388,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.04d";
+const VERSION="2026.07.11a";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -651,9 +654,23 @@ function logFromSpot(t){
   openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes});}
 function renderLog(){
   const el=document.getElementById("logRows");
-  const list=LOG.map((o,i)=>({o,i})).sort((a,b)=>b.o.created-a.o.created);
-  document.getElementById("logCount").innerHTML=list.length?'<b>'+list.length+'</b> entries':"";
-  if(!list.length){el.innerHTML='<div class="empty">No log entries yet.<br>Tap <b>＋ log</b> on a spot, or <b>+ New entry</b>.</div>';return;}
+  const f=(document.getElementById("logFilter")?.value||"").trim().toLowerCase();
+  const list=LOG.map((o,i)=>({o,i})).filter(({o})=>{
+    if(!f)return true;
+    const band=o.freq?(hamBandOf(+o.freq)||""):"";
+    const hay=[o.station,o.ref,o.mode,o.date,o.time,o.notes,o.freq,
+      band,band.replace(/\s/g,"")].join(" ").toLowerCase();
+    return f.split(/\s+/).every(t=>hay.includes(t));
+  }).sort((a,b)=>b.o.created-a.o.created);
+  document.getElementById("logCount").innerHTML=
+    f?'<b>'+list.length+'</b> of '+LOG.length+' entries':
+    (list.length?'<b>'+list.length+'</b> entries':"");
+  if(!list.length){el.innerHTML='<div class="empty">'+(f?
+    'No entries match "<b>'+esc(f)+'</b>".':
+    'No log entries yet.<br>Tap <b>＋ log</b> on a spot, or <b>+ New entry</b>.')+'</div>';
+    if(!f){const bm=document.getElementById("logBadgeMobile"),bd=document.getElementById("logBadgeDesktop");
+      if(bm)bm.textContent="";if(bd)bd.textContent="";}
+    return;}
   el.innerHTML=list.map(({o,i})=>{
     const badge=o.mode?'<span class="badge">'+esc(o.mode)+'</span>':'';
     const rst=(o.rst_sent&&o.rst_rcvd)?o.rst_sent+'/'+o.rst_rcvd:(o.rst_sent||"");
@@ -730,6 +747,7 @@ document.querySelectorAll("#spotChips .chip").forEach(c=>c.addEventListener("cli
   document.querySelectorAll("#spotChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderSpots();}));
 document.getElementById("spotFilter").addEventListener("input",renderSpots);
+document.getElementById("logFilter").addEventListener("input",renderLog);
 document.getElementById("spotRefresh").addEventListener("click",refreshSpots);
 document.getElementById("sortBtn").addEventListener("click",()=>{
   spotSort=spotSort==="freq"?"age":"freq";PREFS.spotSort=spotSort;saveJSON(K.prefs,PREFS);
