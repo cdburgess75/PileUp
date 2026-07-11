@@ -76,3 +76,9 @@ if (errors.length) {
 }
 console.log("PASS  3/3  jsdom boot (all expected elements present)");
 console.log("\nAll smoke tests passed.");
+
+// The booted app leaves timers (clock, auto-refresh) and jsdom's rAF running,
+// which keep Node's event loop alive. Tear the window down and exit explicitly
+// so the process ends instead of hanging until CI's job timeout.
+dom.window.close();
+process.exit(0);
