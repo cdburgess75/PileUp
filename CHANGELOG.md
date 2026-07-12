@@ -4,6 +4,15 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.12b
+
+**Added**
+- Backup & restore card in Tools: one-tap JSON backup of the log, station,
+  and settings; restore merges contacts back with duplicate detection
+- ADIF import — bring in logs from other software; duplicates are skipped
+- The app now requests persistent storage so the log survives browser
+  storage-cleanup sweeps
+
 ## 2026.07.12a
 
 **Fixed**

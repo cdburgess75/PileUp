@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.12a-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.12b-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -64,6 +64,7 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 | **Worked tracking** | Logged callsigns struck through in the spot list until 0000 UTC; duplicate warning when logging |
 | **Logbook** | Pre-filled entries from spots, manual entry, edit/delete, live band-aware search (`20m` matches 14 MHz) |
 | **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
+| **Data safety** | One-tap JSON backup of everything; restore or import ADIF logs with duplicate-safe merging; persistent-storage request |
 | **Station tools** | Callsign + lat/lng + Maidenhead grid with GPS auto-locate |
 | **UI** | Dark/light themes, three font sizes, 12/24 h clock, kiosk mode (fullscreen + wake-lock), UTC + local clocks |
 | **Offline** | Service-worker shell cache, versioned; last spot fetch cached for offline reload |
