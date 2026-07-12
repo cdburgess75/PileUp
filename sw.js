@@ -1,4 +1,4 @@
-const CACHE = "pileup-2026.07.11b";
+const CACHE = "pileup-2026.07.11c";
 const SHELL = [
   "/PileUp/",
   "/PileUp/index.html",
@@ -10,11 +10,13 @@ const SHELL = [
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(SHELL))
-      .then(() => self.skipWaiting())
-  );
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
+});
+
+// The page shows an update banner and posts SKIP_WAITING when the user
+// authorizes the update; only then does the new worker take over.
+self.addEventListener("message", e => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", e => {
