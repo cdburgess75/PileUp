@@ -359,6 +359,18 @@
       </label>
     </div>
 
+    <div class="card" id="backupCard">
+      <h3>◆ Backup &amp; restore</h3>
+      <div class="btnrow">
+        <button class="btn sm" id="backupBtn">⬇ Backup</button>
+        <button class="btn ghost sm" id="restoreBtn">⬆ Restore / Import</button>
+        <input type="file" id="restoreFile" accept=".json,.adi,.adif,.txt" hidden>
+      </div>
+      <div class="hint">Backup saves your log, station, and settings as a JSON file.
+        Restore accepts that file or an ADIF (.adi) log from other software —
+        contacts merge in, duplicates are skipped, nothing is overwritten.</div>
+    </div>
+
     <div class="card" id="shareCard">
       <h3>◆ Share PileUp</h3>
       <div class="hint" style="margin-bottom:10px">Send the app to another operator.</div>
@@ -418,7 +430,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.12a";
+const VERSION="2026.07.12b";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -791,6 +803,69 @@ function downloadBlob(name,text,mime){
     a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(u),2000);toast("Saved "+name);}
   catch(e){toast("Download failed");}}
+
+/* ============ backup / restore ============ */
+// Duplicate detection for merges: same callsign + UTC date + time is the same
+// contact regardless of which file it came from.
+function qsoKey(o){return[(o.station||"").toUpperCase().trim(),o.date||"",o.time||""].join("|");}
+function backupAll(){
+  const data={app:"pileup",version:VERSION,exported:new Date().toISOString(),
+    log:LOG,prefs:PREFS,geo:GEO};
+  downloadBlob("pileup-backup-"+new Date().toISOString().slice(0,10)+".json",
+    JSON.stringify(data,null,1),"application/json");}
+function mergeQsos(incoming){
+  const have=new Set(LOG.map(qsoKey));
+  let added=0,skipped=0,created=Date.now();
+  for(const o of incoming){
+    if(!o||!o.station&&!o.freq){skipped++;continue;}
+    if(have.has(qsoKey(o))){skipped++;continue;}
+    have.add(qsoKey(o));
+    LOG.push({date:String(o.date||""),time:String(o.time||""),freq:String(o.freq||""),
+      mode:String(o.mode||""),station:String(o.station||""),rst_sent:String(o.rst_sent||""),
+      rst_rcvd:String(o.rst_rcvd||""),ref:String(o.ref||""),notes:String(o.notes||""),
+      created:o.created&&!LOG.some(e=>e.created===o.created)?o.created:++created});
+    added++;}
+  return{added,skipped};}
+/* Minimal ADIF reader: walks <FIELD:len>value tags per record. Handles the
+   fields PileUp writes plus POTA_REF/SOTA_REF; everything else is ignored. */
+function parseADIF(text){
+  const body=text.replace(/^[\s\S]*?<eoh>/i,"");
+  return body.split(/<eor>/i).map(rec=>{
+    const f={};let m;const re=/<([A-Za-z_]+):(\d+)(?::[^>]*)?>/g;
+    while((m=re.exec(rec))){f[m[1].toUpperCase()]=rec.substr(m.index+m[0].length,+m[2]).trim();}
+    if(!f.CALL)return null;
+    const d=(f.QSO_DATE||"").replace(/^(\d{4})(\d{2})(\d{2})$/,"$1-$2-$3");
+    return{station:f.CALL,date:d,time:(f.TIME_ON||"").slice(0,4),
+      freq:f.FREQ?String(Math.round(parseFloat(f.FREQ)*1000)):"",
+      mode:f.MODE||"",rst_sent:f.RST_SENT||"",rst_rcvd:f.RST_RCVD||"",
+      ref:f.POTA_REF||f.SOTA_REF||"",notes:f.COMMENT||""};
+  }).filter(Boolean);}
+function restoreFrom(text){
+  let res=null;
+  if(/^\s*\{/.test(text)){
+    let data=null;try{data=JSON.parse(text);}catch(e){}
+    if(!data||data.app!=="pileup"||!Array.isArray(data.log)){toast("Not a PileUp backup");return;}
+    res=mergeQsos(data.log);
+    // A restore onto a fresh install brings the station back too; an import
+    // into a configured app never clobbers the current station.
+    if(!PREFS.call&&data.prefs&&data.prefs.call){PREFS.call=data.prefs.call;saveJSON(K.prefs,PREFS);}
+    if(!GEO.label&&data.geo&&isFinite(data.geo.lat)){GEO=data.geo;saveJSON(K.geo,GEO);}
+  }else if(/<eor>/i.test(text)||/<call:/i.test(text)){
+    res=mergeQsos(parseADIF(text));
+  }else{toast("Unrecognized file");return;}
+  saveJSON(K.log,LOG);renderLog();renderSpots();renderIdent();
+  toast(res.added+" added"+(res.skipped?" · "+res.skipped+" skipped":""));}
+document.getElementById("backupBtn").addEventListener("click",backupAll);
+document.getElementById("restoreBtn").addEventListener("click",()=>document.getElementById("restoreFile").click());
+document.getElementById("restoreFile").addEventListener("change",ev=>{
+  const file=ev.target.files&&ev.target.files[0];if(!file)return;
+  const rd=new FileReader();
+  rd.onload=()=>restoreFrom(String(rd.result||""));
+  rd.onerror=()=>toast("Couldn't read file");
+  rd.readAsText(file);ev.target.value="";});
+// Ask the browser to exempt this origin from storage eviction so the log
+// survives cleanup sweeps. Fire-and-forget: browsers may decline silently.
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 
 /* ============ navigation ============ */
 function showTab(name){
