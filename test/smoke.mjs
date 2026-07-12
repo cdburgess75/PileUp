@@ -13,9 +13,9 @@ if (!js) throw new Error("Could not extract <script> block from index.html");
 // ── Test 1: syntax ────────────────────────────────────────────────────────
 try {
   new Function(js);
-  console.log("PASS  1/3  syntax check");
+  console.log("PASS  1/4  syntax check");
 } catch (e) {
-  throw new Error(`FAIL  1/3  syntax error: ${e.message}`);
+  throw new Error(`FAIL  1/4  syntax error: ${e.message}`);
 }
 
 // ── Test 2: getElementById coverage ──────────────────────────────────────
@@ -23,9 +23,9 @@ const ids = [...js.matchAll(/getElementById\(["']([^"']+)["']\)/g)].map(m => m[1
 const present = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
 const missing = [...new Set(ids)].filter(id => !present.has(id));
 if (missing.length) {
-  throw new Error(`FAIL  2/3  getElementById calls with no matching id="": ${missing.join(", ")}`);
+  throw new Error(`FAIL  2/4  getElementById calls with no matching id="": ${missing.join(", ")}`);
 }
-console.log(`PASS  2/3  getElementById coverage (${new Set(ids).size} IDs checked)`);
+console.log(`PASS  2/4  getElementById coverage (${new Set(ids).size} IDs checked)`);
 
 // ── Test 3: boot in jsdom ────────────────────────────────────────────────
 const vc = new VirtualConsole();
@@ -72,9 +72,23 @@ for (const id of ["tab-spots", "tab-log", "tab-tools", "toast", "logModal"]) {
 }
 
 if (errors.length) {
-  throw new Error(`FAIL  3/3  jsdom boot:\n  ${errors.join("\n  ")}`);
+  throw new Error(`FAIL  3/4  jsdom boot:\n  ${errors.join("\n  ")}`);
 }
-console.log("PASS  3/3  jsdom boot (all expected elements present)");
+console.log("PASS  3/4  jsdom boot (all expected elements present)");
+
+// ── Test 4: version sync ──────────────────────────────────────────────────
+// The version string lives in three places that must never drift: the app's
+// VERSION constant, the service-worker cache name (what actually triggers an
+// update), and the README badge.
+const appVer = js.match(/const VERSION="([^"]+)"/)?.[1];
+const swVer = fs.readFileSync(path.join(root, "sw.js"), "utf8")
+  .match(/const CACHE = "pileup-([^"]+)"/)?.[1];
+const badgeVer = fs.readFileSync(path.join(root, "README.md"), "utf8")
+  .match(/img\.shields\.io\/badge\/version-([^-]+)-/)?.[1];
+if (!appVer || appVer !== swVer || appVer !== badgeVer) {
+  throw new Error(`FAIL  4/4  version drift: index.html=${appVer} sw.js=${swVer} README=${badgeVer}`);
+}
+console.log(`PASS  4/4  version sync (${appVer} in app, service worker, README)`);
 console.log("\nAll smoke tests passed.");
 
 // The booted app leaves timers (clock, auto-refresh) and jsdom's rAF running,

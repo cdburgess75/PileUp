@@ -8,6 +8,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PileUp">
 <meta name="theme-color" content="#000000">
+<!-- The app is one inline script/stylesheet, so 'unsafe-inline' is required;
+     the value of this policy is the connect-src allowlist, which pins network
+     access to the two spot APIs and the two CORS relay fallbacks. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.pota.app https://api-db2.sota.org.uk https://api2.sota.org.uk https://api.allorigins.win https://corsproxy.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="description" content="Live POTA & SOTA spots and QSO logger for ham radio operators. Installable, works offline, no account.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -199,6 +203,8 @@
   [data-theme="light"] .tag.band{background:var(--bc,var(--blue));color:#000;text-shadow:none;box-shadow:none;border-width:1px;}
   .acts{display:flex;gap:8px;margin-top:2px;}
   .act{font-size:14px;cursor:pointer;color:var(--ink-dim);user-select:none;line-height:1;}
+  .spotrow:focus-visible,.act:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  .sheet:focus{outline:none;}
   .act.log{font-size:10.5px;letter-spacing:.1em;border:1px solid var(--amber-dim);border-radius:5px;
     padding:4px 8px;text-transform:uppercase;color:var(--amber);font-weight:700;}
 
@@ -266,7 +272,7 @@
   <header>
     <div class="brand">
       <h1>PILEUP</h1><span class="sub">POTA · SOTA Operating Log</span>
-      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" style="margin-left:auto">☀</button>
+      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme" style="margin-left:auto">☀</button>
     </div>
     <div class="ident">
       <span id="hdrCall" class="ident-call"></span>
@@ -371,7 +377,7 @@
 
 <!-- log modal -->
 <div class="modal" id="logModal" hidden>
-  <div class="sheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="logTitle" tabindex="-1">
     <h3 id="logTitle">◆ Log entry</h3>
     <div class="formgrid">
       <label>Date (UTC)<input type="text" id="lgDate" autocomplete="off"></label>
@@ -412,7 +418,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.11c";
+const VERSION="2026.07.12a";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -446,6 +452,8 @@ let _worked=new Set();
 
 /* ============ helpers ============ */
 const pad=n=>String(n).padStart(2,"0");
+/* 6-character Maidenhead locator (e.g. FN42li). Inputs are clamped just under
+   the wrap-around point so +90 lat / +180 lng stay inside RR99xx. */
 function toGrid(lat,lng){
   const lo=Math.min(lng+180,359.9999),la=Math.min(lat+90,179.9999);
   return String.fromCharCode(65+Math.floor(lo/20),65+Math.floor(la/10))+
@@ -456,9 +464,18 @@ function hamBandOf(k){for(const b of HAM)if(k>=+b[1]&&k<=+b[2])return b[0];retur
 function fmtFreq(k){return k>=1000?(k/1000).toFixed(3):k.toFixed(k%1?2:0);}
 function freqUnit(k){return k>=1000?"MHz":"kHz";}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-function attr(s){return String(s).replace(/"/g,"&quot;").replace(/&/g,"&amp;");}
-function ageStr(ms){const s=Math.max(0,Date.now()-ms)/1000;if(s<60)return"now";
+function attr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;");}
+function ageStr(ms){if(!isFinite(ms))return"—";
+  const s=Math.max(0,Date.now()-ms)/1000;if(s<60)return"now";
   const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h+"h "+(m%60)+"m";}
+/* Both spot APIs return ISO timestamps that are UTC but not always marked as
+   such. Append Z only when no zone designator is present, so a bare
+   "2026-07-12T15:00:00" parses as UTC instead of local time, while an
+   already-zoned value passes through untouched. */
+function parseUTC(v){const s=String(v||"").trim();if(!s)return new Date(NaN);
+  return new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(s)?s:s+"Z");}
+/* Great-circle distance in km (haversine) and initial bearing in degrees
+   true (0-359), both from decimal-degree coordinates. */
 function haversine(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
   const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
@@ -523,10 +540,13 @@ function tick(){const d=new Date();
 /* ============ POTA / SOTA spots ============ */
 function fetchWithTimeout(url,opts,ms){const ac=new AbortController();const id=setTimeout(()=>ac.abort(),ms||7000);
   return fetch(url,{...opts,signal:ac.signal}).finally(()=>clearTimeout(id));}
+/* Direct fetch first; public CORS relays only as a fallback for browsers that
+   block the cross-origin call (mainly iOS in-app webviews). The relays can see
+   the request and could alter the response, so their data is treated the same
+   as any other untrusted input: escaped at render, never executed. */
 function relays(raw){return[raw,
   "https://api.allorigins.win/raw?url="+encodeURIComponent(raw),
-  "https://corsproxy.io/?url="+encodeURIComponent(raw),
-  "https://thingproxy.freeboard.io/fetch/"+raw];}
+  "https://corsproxy.io/?url="+encodeURIComponent(raw)];}
 async function getSpots(prog){
   const urls=prog==="pota"?["https://api.pota.app/spot/activator"]
     :["https://api-db2.sota.org.uk/api/spots/40/all","https://api2.sota.org.uk/api/spots/40/all"];
@@ -536,32 +556,45 @@ async function getSpots(prog){
   }
   return null;
 }
+/* Normalize both feeds to one spot shape: {freq(kHz), call, ref, name, mode,
+   when(Date), comments, loc, lat, lng}. POTA reports frequency in kHz; SOTA in
+   MHz (hence *1000). SOTA summit refs need the association prefixed to match
+   the XX/YY-000 form users know. Field fallbacks cover API revisions seen in
+   the wild — treat these mappings as the contract with the outside world. */
 function normPota(d){return d.map(x=>({freq:parseFloat(x.frequency),call:x.activator||"",ref:x.reference||"",
-  name:x.name||x.parkName||"",mode:(x.mode||"").toUpperCase(),when:new Date((x.spotTime||"")+"Z"),
+  name:x.name||x.parkName||"",mode:(x.mode||"").toUpperCase(),when:parseUTC(x.spotTime),
   comments:x.comments||"",loc:x.locationDesc||"",
   lat:parseFloat(x.latitude),lng:parseFloat(x.longitude)}));}
 function normSota(d){return d.map(x=>{let ref=x.summitCode||"";
   if(x.associationCode&&!ref.includes("/"))ref=x.associationCode+"/"+ref;
   return{freq:parseFloat(x.frequency)*1000,call:x.activatorCallsign||x.activator||"",ref,
     name:x.summitDetails||x.summitName||"",mode:(x.mode||"").toUpperCase(),
-    when:new Date(x.timeStamp),comments:x.comments||"",loc:x.associationCode||"",
+    when:parseUTC(x.timeStamp),comments:x.comments||"",loc:x.associationCode||"",
     lat:parseFloat(x.summitLat||x.latitude),lng:parseFloat(x.summitLng||x.longitude)};});}
+let _refreshing=false;
 async function refreshSpots(){
-  const prog=spotProg;setSpotSpin(true);
-  if(!navigator.onLine){spotStatus="offline";setSpotSpin(false);renderSpots();return;}
-  spotStatus="loading";renderSpots();
-  let data=null;try{data=await getSpots(prog);}catch(e){}
-  if(data){const list=(prog==="pota"?normPota:normSota)(data).filter(s=>isFinite(s.freq)&&s.freq>0);
-    SPOTS[prog]={list,ts:Date.now()};saveJSON(K[prog],SPOTS[prog]);
-    if(prog===spotProg)spotStatus="";_spotMeta[prog].failCount=0;_spotMeta[prog].failTs=0;}
-  else if(prog===spotProg){spotStatus="failed";_spotMeta[prog].failCount++;_spotMeta[prog].failTs=Date.now();}
-  setSpotSpin(false);if(prog===spotProg)renderSpots();
+  // A refresh can be triggered by the interval, visibilitychange, the online
+  // event, and the button; a slow relay chain can outlive the 60 s interval,
+  // so serialize instead of letting fetches overlap.
+  if(_refreshing)return;_refreshing=true;
+  try{
+    const prog=spotProg;setSpotSpin(true);
+    if(!navigator.onLine){spotStatus="offline";setSpotSpin(false);renderSpots();return;}
+    spotStatus="loading";renderSpots();
+    let data=null;try{data=await getSpots(prog);}catch(e){}
+    if(data){const list=(prog==="pota"?normPota:normSota)(data).filter(s=>isFinite(s.freq)&&s.freq>0);
+      SPOTS[prog]={list,ts:Date.now()};saveJSON(K[prog],SPOTS[prog]);
+      if(prog===spotProg)spotStatus="";_spotMeta[prog].failCount=0;_spotMeta[prog].failTs=0;}
+    else if(prog===spotProg){spotStatus="failed";_spotMeta[prog].failCount++;_spotMeta[prog].failTs=Date.now();}
+    setSpotSpin(false);if(prog===spotProg)renderSpots();
+  }finally{_refreshing=false;}
 }
 function openSpots(force){renderSpots();const pack=SPOTS[spotProg]||{ts:0};
   if(navigator.onLine&&(force||Date.now()-pack.ts>60000))refreshSpots();}
 function setSpotSpin(on){const b=document.getElementById("spotRefresh");if(!b)return;
   b.innerHTML=on?'<span class="upd-spin">⟳</span>':'⟳';b.disabled=on;}
 function spotRowHTML(s){
+  // 45 min with no re-spot usually means the activation is over; dim the row.
   const ms=+new Date(s.when),age=ageStr(ms),stale=Date.now()-ms>45*60000;
   const band=hamBandOf(s.freq),md=s.mode?'<span class="badge">'+esc(s.mode)+'</span>':'';
   const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
@@ -576,7 +609,7 @@ function spotRowHTML(s){
     distStr='<span class="dist">'+km+' km · '+bear+'°</span>';}
   const worked=_worked.has((s.call||"").toUpperCase().trim());
   const wkd=worked?'<span class="wkd">✓ worked</span>':'';
-  return '<div class="row spotrow'+(stale?' stale':'')+(worked?' worked':'')+'" '+da+'>'+
+  return '<div class="row spotrow'+(stale?' stale':'')+(worked?' worked':'')+'" '+da+' role="button" tabindex="0" aria-label="Log '+attr(s.call||s.ref)+'">'+
     '<div class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></div>'+
     '<div class="mid"><div class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+wkd+'</div>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+cmt+'</div>'+
@@ -636,9 +669,11 @@ function renderSpots(){
 }
 
 /* ============ logbook ============ */
+let _lastFocus=null;
 function closeLog(){editIdx=-1;document.getElementById("lgSave").textContent="Save";
   const ld=document.getElementById("lgDelete");if(ld)ld.style.display="none";
-  document.getElementById("logModal").hidden=true;}
+  document.getElementById("logModal").hidden=true;
+  if(_lastFocus&&document.contains(_lastFocus)){_lastFocus.focus();}_lastFocus=null;}
 function openLog(pre,idx){pre=pre||{};const d=new Date();
   editIdx=(typeof idx==="number")?idx:-1;
   document.getElementById("lgSave").textContent=editIdx>=0?"Update":"Save";
@@ -653,7 +688,11 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   document.getElementById("lgRef").value=pre.ref||"";
   document.getElementById("lgNotes").value=pre.notes||"";
   const ld=document.getElementById("lgDelete");if(ld)ld.style.display=editIdx>=0?"":"none";
-  document.getElementById("logModal").hidden=false;}
+  _lastFocus=document.activeElement;
+  document.getElementById("logModal").hidden=false;
+  // Move screen-reader/keyboard context into the dialog without popping the
+  // mobile keyboard (which focusing an input would do).
+  document.querySelector("#logModal .sheet").focus();}
 function saveLog(){
   const o={date:document.getElementById("lgDate").value.trim(),
     time:document.getElementById("lgTime").value.trim().replace(/:/g,""),
@@ -666,8 +705,9 @@ function saveLog(){
     notes:document.getElementById("lgNotes").value.trim(),
     created:Date.now()};
   if(!o.freq&&!o.station){toast("Add a frequency or callsign");return;}
-  if(editIdx>=0){o.created=LOG[editIdx].created;LOG[editIdx]=o;}else{LOG.push(o);}
-  saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(editIdx>=0?"Updated":"Logged");}
+  const wasEdit=editIdx>=0;
+  if(wasEdit){o.created=LOG[editIdx].created;LOG[editIdx]=o;}else{LOG.push(o);}
+  saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(wasEdit?"Updated":"Logged");}
 function logFromSpot(t){
   const prog=(t.dataset.prog||spotProg).toUpperCase(),mode=t.dataset.md||"",
     call=t.dataset.call||"",ref=t.dataset.ref||"",name=t.dataset.name||"",f=t.dataset.f||"";
@@ -703,8 +743,8 @@ function renderLog(){
       '<span class="u">'+(o.freq?freqUnit(+o.freq):'kHz')+'</span></div>'+
       '<div class="mid"><div class="st">'+esc(o.station||"(no callsign)")+badge+'</div>'+
       '<div class="meta">'+meta+'</div></div>'+
-      '<div class="right"><span class="act log" data-act="editlog" data-id="'+o.created+'">edit</span>'+
-      '<span class="act log" data-act="dellog" data-id="'+o.created+'">del</span></div></div>';}).join("");
+      '<div class="right"><span class="act log" data-act="editlog" data-id="'+o.created+'" role="button" tabindex="0">edit</span>'+
+      '<span class="act log" data-act="dellog" data-id="'+o.created+'" role="button" tabindex="0">del</span></div></div>';}).join("");
   const bc=LOG.length?String(LOG.length):"";
   const bm=document.getElementById("logBadgeMobile"),bd=document.getElementById("logBadgeDesktop");
   if(bm)bm.textContent=bc;if(bd)bd.textContent=bc;}
@@ -713,8 +753,15 @@ function exportLogCSV(){
   const rows=[["date_utc","time_utc","freq_khz","mode","callsign","reference","rst_sent","rst_rcvd","notes"]];
   LOG.slice().sort((a,b)=>a.created-b.created).forEach(o=>
     rows.push([o.date,o.time,o.freq,o.mode||"",o.station,o.ref||"",o.rst_sent||"",o.rst_rcvd||"",o.notes]));
-  const csv=rows.map(r=>r.map(c=>'"'+String(c||"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  // Leading = + - @ would execute as a formula when opened in Excel/Sheets;
+  // prefix with ' so hostile text from a logged spot stays inert.
+  const cell=c=>{let s=String(c||"");if(/^[=+\-@]/.test(s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"';};
+  const csv=rows.map(r=>r.map(cell).join(",")).join("\r\n");
   downloadBlob("pileup-log.csv",csv,"text/csv");}
+/* ADIF 3.1.4 export. Refs containing "/" are SOTA (association/summit), the
+   plain XX-NNNN form is POTA. Loose digital-mode labels (DIG, DATA) map to
+   MFSK because ADIF has no generic "data" mode and MFSK is the accepted
+   umbrella that LoTW/QRZ import cleanly. */
 function exportLogADIF(){
   if(!LOG.length){toast("Log is empty");return;}
   function tag(name,val){const s=String(val||"").trim();return s?"<"+name+":"+s.length+">"+s:"";}
@@ -770,8 +817,10 @@ document.querySelectorAll("#spotChips .chip").forEach(c=>c.addEventListener("cli
   spotMode=c.dataset.sm;PREFS.spotMode=spotMode;saveJSON(K.prefs,PREFS);
   document.querySelectorAll("#spotChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderSpots();}));
-document.getElementById("spotFilter").addEventListener("input",renderSpots);
-document.getElementById("logFilter").addEventListener("input",renderLog);
+// Debounce so a fast typist gets one list rebuild per pause, not per key.
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+document.getElementById("spotFilter").addEventListener("input",debounce(renderSpots,120));
+document.getElementById("logFilter").addEventListener("input",debounce(renderLog,120));
 document.getElementById("spotRefresh").addEventListener("click",refreshSpots);
 document.getElementById("sortBtn").addEventListener("click",()=>{
   spotSort=spotSort==="freq"?"age":"freq";PREFS.spotSort=spotSort;saveJSON(K.prefs,PREFS);
@@ -781,6 +830,12 @@ document.getElementById("lgDelete").addEventListener("click",()=>{
   if(editIdx<0)return;const entry=LOG[editIdx];if(!entry)return;
   LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast("Deleted");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
+// Enter/Space activate the role="button" spot rows and edit/del controls.
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  const t=e.target.closest&&e.target.closest("[data-act]");
+  if(!t||t===document)return;
+  e.preventDefault();t.click();});
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden||document.getElementById("tab-spots").hidden||!navigator.onLine)return;
   const pack=SPOTS[spotProg]||{ts:0};if(Date.now()-pack.ts>60000)refreshSpots();});
@@ -823,7 +878,9 @@ document.getElementById("useLoc").addEventListener("click",()=>{
     saveJSON(K.geo,GEO);
     document.getElementById("geoLat").value=GEO.lat;
     document.getElementById("geoLng").value=GEO.lng;
-    renderIdent();toast("Location set");},()=>toast("Location denied"));});
+    renderIdent();toast("Location set");},
+    e=>toast(e&&e.code===3?"Location timed out":"Location denied"),
+    {timeout:10000,maximumAge:60000});});
 
 document.getElementById("shareBtn").addEventListener("click",async()=>{
   const url="https://cdburgess75.github.io/PileUp/";
@@ -858,6 +915,9 @@ renderIdent();renderLog();
 document.querySelectorAll("#spotChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.sm===spotMode));
 document.getElementById("sortBtn").textContent=spotSort==="freq"?"≡ Freq":"≡ Age";
 tick();setInterval(tick,1000);
+// Auto-refresh every 60 s while visible, online, and on the Spots tab.
+// After failures, back off by failCount×2 minutes (capped at 10) so a dead
+// API isn't hammered from a phone in the field.
 setInterval(()=>{
   if(document.hidden||!navigator.onLine||document.getElementById("tab-spots").hidden)return;
   const m=_spotMeta[spotProg];
