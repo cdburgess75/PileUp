@@ -77,6 +77,7 @@
     transition:.15s;white-space:nowrap;}
   .tgl-btn:hover{color:var(--ink);}
   .tgl-btn.on{color:var(--amber);border-color:var(--amber-dim);}
+  #themeToggle{font-size:14px;line-height:1;padding:3px 9px;color:var(--amber);border-color:var(--amber-dim);border-radius:50%;}
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
   .clock{display:flex;flex-direction:column;gap:1px;}
   .clock .lbl{font-size:8.5px;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;}
@@ -251,7 +252,7 @@
   <header>
     <div class="brand">
       <h1>PILEUP</h1><span class="sub">POTA · SOTA Operating Log</span>
-      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" style="margin-left:auto">◑ Dark</button>
+      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" style="margin-left:auto">☀</button>
     </div>
     <div class="ident">
       <span id="hdrCall" class="ident-call"></span>
@@ -322,8 +323,8 @@
       <h3>◆ Display</h3>
       <div class="hint" style="margin-bottom:6px">Theme</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <button class="tgl-btn on" data-theme-btn="" title="Dark theme">◑ Dark</button>
-        <button class="tgl-btn" data-theme-btn="light" title="Light theme">◐ Light</button>
+        <button class="tgl-btn on" data-theme-btn="" title="Dark theme">☾ Dark</button>
+        <button class="tgl-btn" data-theme-btn="light" title="Light theme">☀ Light</button>
         <button class="kiosk-btn" id="kioskBtn" title="Kiosk mode">⛶ Kiosk</button>
       </div>
       <div class="hint" style="margin-bottom:6px">Font size</div>
@@ -388,7 +389,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.11a";
+const VERSION="2026.07.11b";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -460,7 +461,7 @@ function applyTheme(t){
   PREFS.theme=t||"";saveJSON(K.prefs,PREFS);
   const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=t==="light"?"#F9FBFF":"#000000";
   document.querySelectorAll("[data-theme-btn]").forEach(b=>b.classList.toggle("on",b.dataset.themeBtn===(t||"")));
-  const tt=document.getElementById("themeToggle");if(tt)tt.textContent=t==="light"?"◐ Light":"◑ Dark";
+  const tt=document.getElementById("themeToggle");if(tt)tt.textContent=t==="light"?"☾":"☀";
 }
 function applyZoom(z){
   PREFS.zoom=z;saveJSON(K.prefs,PREFS);
