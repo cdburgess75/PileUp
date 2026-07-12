@@ -238,6 +238,20 @@
 
   footer{margin-top:16px;font-size:9.5px;color:var(--ink-dim);line-height:1.7;text-align:center;}
   footer a{color:var(--amber-dim);}
+  .verline{margin-top:8px;font-size:9px;letter-spacing:.14em;color:var(--ink-dim);opacity:.75;}
+
+  .upbanner{position:fixed;top:0;left:50%;z-index:90;display:flex;align-items:center;gap:11px;
+    transform:translate(-50%,-130%);transition:transform .4s cubic-bezier(.2,.9,.3,1.1);
+    margin-top:max(12px,env(safe-area-inset-top));padding:9px 12px 9px 15px;
+    background:var(--panel2);border:1px solid var(--amber-dim);border-radius:11px;
+    box-shadow:0 10px 30px rgba(0,0,0,.55);max-width:calc(100vw - 24px);white-space:nowrap;}
+  .upbanner.show{transform:translate(-50%,0);}
+  .upbanner .up-msg{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink);text-transform:uppercase;}
+  .upbanner .up-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;
+    animation:updot 1.2s ease-in-out infinite;}
+  @keyframes updot{0%,100%{box-shadow:0 0 0 0 rgba(240,146,60,.55);}50%{box-shadow:0 0 0 5px rgba(240,146,60,0);}}
+  .upbanner .up-close{background:none;border:none;color:var(--ink-dim);font-size:12px;cursor:pointer;
+    padding:4px 5px;line-height:1;}
 </style>
 </head>
 <body>
@@ -349,6 +363,7 @@
       Spots: <a href="https://pota.app" target="_blank" rel="noopener">POTA</a> &amp;
       <a href="https://www.sotadata.org.uk" target="_blank" rel="noopener">SOTA</a>.
       All data cached on-device. No account required.
+      <div class="verline" id="verLine"></div>
     </footer>
   </section>
 </div><!-- /.wrap -->
@@ -380,6 +395,14 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- update banner -->
+<div class="upbanner" id="upBanner" role="status">
+  <span class="up-dot"></span>
+  <span class="up-msg">Update ready</span>
+  <button class="btn sm" id="upApply">⬆ Update</button>
+  <button class="up-close" id="upDismiss" aria-label="Dismiss">✕</button>
+</div>
+
 <!-- bottom nav -->
 <nav class="bottomnav" id="bottomNav">
   <button class="bnav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
@@ -389,7 +412,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.11b";
+const VERSION="2026.07.11c";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -841,7 +864,39 @@ setInterval(()=>{
   if(m.failCount>0&&Date.now()-m.failTs<Math.min(m.failCount*2,10)*60000)return;
   refreshSpots();},60000);
 openSpots();
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+/* ============ version + updates ============ */
+document.getElementById("verLine").textContent="PILEUP v"+VERSION;
+let _upWorker=null,_upTimer=0;
+function showUpBanner(worker){
+  _upWorker=worker;
+  const b=document.getElementById("upBanner");
+  b.classList.add("show");
+  clearTimeout(_upTimer);
+  _upTimer=setTimeout(()=>b.classList.remove("show"),8000);
+}
+document.getElementById("upApply").addEventListener("click",()=>{
+  document.getElementById("upBanner").classList.remove("show");
+  if(_upWorker)_upWorker.postMessage({type:"SKIP_WAITING"});
+});
+document.getElementById("upDismiss").addEventListener("click",()=>{
+  clearTimeout(_upTimer);
+  document.getElementById("upBanner").classList.remove("show");
+});
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    const watch=w=>{if(!w)return;
+      w.addEventListener("statechange",()=>{
+        if(w.state==="installed"&&navigator.serviceWorker.controller)showUpBanner(w);});};
+    if(reg.waiting&&navigator.serviceWorker.controller)showUpBanner(reg.waiting);
+    watch(reg.installing);
+    reg.addEventListener("updatefound",()=>watch(reg.installing));
+    document.addEventListener("visibilitychange",()=>{
+      if(!document.hidden)reg.update().catch(()=>{});});
+  }).catch(()=>{});
+  let _reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(_reloaded)return;_reloaded=true;location.reload();});
+}
 </script>
 </body>
 </html>
