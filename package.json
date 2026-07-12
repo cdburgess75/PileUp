@@ -1,8 +1,16 @@
 {
   "name": "pileup",
-  "version": "2026.7.4",
-  "description": "POTA & SOTA live spots and QSO log",
+  "version": "2026.7.12",
+  "description": "POTA & SOTA live spots and QSO log — single-file PWA",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdburgess75/PileUp.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "node test/smoke.mjs"
   },

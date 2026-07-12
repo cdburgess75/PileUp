@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.11c-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.12a-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -84,7 +84,7 @@ PileUp/
 
 Inside `index.html`, the script section is organized as: constants and reference data (band plan, storage keys) → helpers (Maidenhead grid, haversine distance/bearing, formatting) → spot fetch/normalize/render → logbook CRUD and exports → station tools and preferences.
 
-**Data flow:** spots are fetched from the public POTA and SOTA APIs. If a browser blocks the cross-origin request (common in iOS in-app browsers), the fetch falls back through a relay chain — allorigins → corsproxy.io → thingproxy.
+**Data flow:** spots are fetched from the public POTA and SOTA APIs. If a browser blocks the cross-origin request (common in iOS in-app browsers), the fetch falls back through a relay chain — allorigins → corsproxy.io. A `Content-Security-Policy` meta tag pins network access to exactly these hosts.
 
 | Source | Endpoint |
 |---|---|
@@ -132,13 +132,14 @@ Open `http://localhost:3000` (or just open `index.html` directly — the app run
 npm test
 ```
 
-The smoke suite (`test/smoke.mjs`) runs three checks in about a second:
+The smoke suite (`test/smoke.mjs`) runs four checks in about a second:
 
 | # | Check | Catches |
 |---|---|---|
 | 1 | Script parses (`new Function`) | Syntax errors anywhere in the app |
 | 2 | Every `getElementById` call has a matching `id=""` | Typos between markup and logic |
 | 3 | Full boot inside jsdom with stubbed `fetch`/`localStorage` | Runtime errors on startup, missing elements |
+| 4 | `VERSION` === `sw.js` cache name === README badge | Version drift between app, cache, and docs |
 
 The same suite runs in CI on every push and pull request via [GitHub Actions](.github/workflows/smoke.yml).
 
