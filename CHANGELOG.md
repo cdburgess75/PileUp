@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.15.006
+
+**Added**
+- Collapsed spot rows now show the park/summit reference in its own aligned
+  column between the band pill and the age. Under width pressure it yields
+  only after the mode badge; callsign and band pill still never do
+
 ## 2026.07.15.5
 
 **Changed**
