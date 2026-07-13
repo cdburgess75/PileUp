@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.15.009
+
+**Changed**
+- The World map now fills the screen: it opens centered on your QTH at the
+  widest zoom that leaves no empty bands, and you pan/zoom the world within
+  it (Google-Maps style). Rotation and resize re-fit automatically
+- Map colors: deep-blue ocean, warm land, faint graticule — and spot rings
+  are now colored by their band, matching the chips and pills everywhere else
+
 ## 2026.07.15.008
 
 **Added**

@@ -268,10 +268,15 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:11px;}
   .card h3{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--amber);text-transform:uppercase;}
 
-  #mapSvg svg{display:block;width:100%;height:auto;}
-  .mapland{fill:#1b1b1b;stroke:#373737;stroke-width:.7;}
-  [data-theme="light"] .mapland{fill:#dfe6ee;stroke:#b9c4d2;}
-  .mapgrat{fill:none;stroke:var(--line);stroke-width:.6;stroke-dasharray:3 5;opacity:.7;}
+  #mapSvg svg{display:block;width:100%;height:100%;}
+  /* Deep-blue ocean, warm umber land: colorful but neutral enough that the
+     band-colored spot rings and green logged dots stay the loudest layer. */
+  .mapocean{fill:#0f1e2e;}
+  .mapland{fill:#3a352c;stroke:#5c554a;stroke-width:.7;}
+  [data-theme="light"] .mapocean{fill:#cfe3f2;}
+  [data-theme="light"] .mapland{fill:#e7e0d0;stroke:#c2b89f;}
+  .mapgrat{fill:none;stroke:#33475c;stroke-width:.6;stroke-dasharray:3 5;opacity:.6;}
+  [data-theme="light"] .mapgrat{stroke:#a8c4dd;}
   .mhit{fill:transparent;cursor:pointer;}
   .mapring{fill:none;stroke:var(--line);stroke-width:1;}
   .mapaxis{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4;}
@@ -578,7 +583,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15.008";
+const VERSION="2026.07.15.009";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1083,7 +1088,8 @@ function mapPoints(){
   if(mapLayer!=="log")for(const prog of["pota","sota"])
     for(const s of(SPOTS[prog].list||[]))
       if(isFinite(s.lat)&&isFinite(s.lng))
-        pts.push({kind:"spot",call:s.call,ref:s.ref,lat:s.lat,lng:s.lng});
+        pts.push({kind:"spot",call:s.call,ref:s.ref,lat:s.lat,lng:s.lng,
+          color:BAND_COLOR[hamBandOf(s.freq)]||""});
   if(mapLayer!=="spots")for(const o of LOG)
     if(isFinite(o.lat)&&isFinite(o.lng))
       pts.push({kind:"log",call:o.station,ref:o.ref,lat:o.lat,lng:o.lng,date:o.date});
@@ -1093,21 +1099,35 @@ function dotLabel(p,km){
     Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng))+"°"+(p.date?" · "+p.date:"");}
 function renderWorld(el,pts){
   const X=lng=>(lng+180)*2,Y=lat=>(90-lat)*2;
-  let svg='<svg viewBox="0 0 720 360" role="img" aria-label="World map of spots and logged contacts">';
+  let svg='<svg viewBox="0 0 720 360" preserveAspectRatio="xMidYMid slice" role="img" aria-label="World map of spots and logged contacts">';
+  svg+='<rect class="mapocean" x="-40" y="-40" width="800" height="440"/>';
+  for(let x=120;x<720;x+=120)svg+='<line class="mapgrat" x1="'+x+'" y1="0" x2="'+x+'" y2="360"/>';
+  for(let y=60;y<360;y+=60)svg+='<line class="mapgrat" x1="0" y1="'+y+'" x2="720" y2="'+y+'"/>';
   svg+='<path class="mapland" d="'+WORLD_PATH+'"/>';
-  svg+='<line class="mapgrat" x1="0" y1="180" x2="720" y2="180"/>';   // equator
   for(const p of pts){
     const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng),label=dotLabel(p,km);
     const x=X(p.lng).toFixed(1),y=Y(p.lat).toFixed(1);
-    svg+='<circle class="mdot-'+p.kind+'" cx="'+x+'" cy="'+y+'" r="'+(p.kind==="log"?5.5:5)+'">'+
+    svg+='<circle class="mdot-'+p.kind+'"'+(p.color?' style="stroke:'+p.color+'"':'')+
+      ' cx="'+x+'" cy="'+y+'" r="'+(p.kind==="log"?5.5:5)+'">'+
       '<title>'+esc(label)+'</title></circle>'+
       '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x+'" cy="'+y+'" r="13"/>';}
   const qx=X(GEO.lng).toFixed(1),qy=Y(GEO.lat).toFixed(1);
   svg+='<circle class="mqth-pulse" cx="'+qx+'" cy="'+qy+'" r="10"/>'+
        '<circle class="mdot-qth" cx="'+qx+'" cy="'+qy+'" r="4.5"/></svg>';
   el.innerHTML=svg;applyMapZoom();}
+/* Give the map the screen: world view fills the height left between the
+   chips above and legend/nav below; radar keeps its square. */
+function sizeMapBox(el){
+  if(el.clientWidth===0)return;
+  if(mapView==="world"){
+    const top=el.getBoundingClientRect().top;
+    const h=Math.max(300,Math.min(window.innerHeight-top-238,720));
+    el.style.height=h+"px";
+  }else{el.style.height=el.clientWidth+"px";}
+}
 function renderMap(){
   const el=document.getElementById("mapSvg");if(!el)return;
+  sizeMapBox(el);
   const C=200,pts=mapPoints();
   if(mapView==="world"){renderWorld(el,pts);renderMapInfo(pts);return;}
   let svg='<svg viewBox="0 0 400 400" role="img" aria-label="Azimuthal map of spots and logged contacts">';
@@ -1126,7 +1146,8 @@ function renderMap(){
     const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng);
     const br=bearing(GEO.lat,GEO.lng,p.lat,p.lng)*Math.PI/180;
     const r=mapR(km),x=C+r*Math.sin(br),y=C-r*Math.cos(br),label=dotLabel(p,km);
-    svg+='<circle class="mdot-'+p.kind+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+
+    svg+='<circle class="mdot-'+p.kind+'"'+(p.color?' style="stroke:'+p.color+'"':'')+
+      ' cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+
       '" r="'+(p.kind==="log"?4.5:4)+'"><title>'+esc(label)+'</title></circle>'+
       '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11"/>';}
   svg+='<circle class="mqth-pulse" cx="200" cy="200" r="8"/>'+
@@ -1138,27 +1159,44 @@ function renderMap(){
 /* --- map zoom & pan: pinch, one-finger pan when zoomed, wheel, double-tap.
    Implemented purely by moving the SVG viewBox; markers re-scale so they
    stay finger-sized instead of ballooning. --- */
-let _mz={k:1,x:0,y:0};
+let _mz={k:1,x:0,y:0,init:false,minK:1};
 function mapBase(){return mapView==="world"?[720,360]:[400,400];}
 function applyMapZoom(){
   const el=document.getElementById("mapSvg"),svg=el&&el.querySelector("svg");
   if(!svg)return;
-  const[W,H]=mapBase(),k=_mz.k,w=W/k,h=H/k;
-  _mz.x=Math.min(Math.max(_mz.x,0),W-w);_mz.y=Math.min(Math.max(_mz.y,0),H-h);
+  const[W,H]=mapBase(),rect=el.getBoundingClientRect();
+  // Match the viewBox aspect to the container so the map fills it edge to
+  // edge; minK is the widest zoom that still leaves no letterboxing.
+  const a=rect.width>0?rect.height/rect.width:H/W;
+  _mz.minK=Math.max(1,(W*a)/H);
+  if(!_mz.init){
+    // First show: home view — as zoomed-out as fills the box, centered on QTH.
+    _mz.init=true;_mz.k=_mz.minK;
+    const w0=W/_mz.k,h0=Math.min(H,w0*a);
+    const qx=mapView==="world"?(GEO.lng+180)*2:200,
+          qy=mapView==="world"?(90-GEO.lat)*2:200;
+    _mz.x=qx-w0/2;_mz.y=qy-h0/2;
+  }
+  const k=Math.min(12,Math.max(_mz.minK,_mz.k));_mz.k=k;
+  const w=W/k,h=Math.min(H,w*a);
+  _mz.x=Math.min(Math.max(_mz.x,0),W-w);
+  _mz.y=Math.min(Math.max(_mz.y,0),Math.max(0,H-h));
   svg.setAttribute("viewBox",_mz.x.toFixed(2)+" "+_mz.y.toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2));
   svg.style.setProperty("--zk",k);
   svg.querySelectorAll("circle").forEach(c=>{
     if(!c.dataset.br)c.dataset.br=c.getAttribute("r");
     c.setAttribute("r",(+c.dataset.br/k).toFixed(2));});
-  el.classList.toggle("zoomed",k>1.02);
-  document.getElementById("mapReset").hidden=k<=1.02;
+  const home=k<=_mz.minK*1.02;
+  el.classList.toggle("zoomed",!home);
+  document.getElementById("mapReset").hidden=home;
 }
+function mapHome(){_mz={k:1,x:0,y:0,init:false,minK:1};applyMapZoom();}
 function mapClientToSvg(cx,cy){
   const svg=document.querySelector("#mapSvg svg"),r=svg.getBoundingClientRect();
   const[W]=mapBase(),w=W/_mz.k;
   return[_mz.x+(cx-r.left)*w/r.width,_mz.y+(cy-r.top)*w/r.width];}
 function mapZoomAt(px,py,factor){
-  const nk=Math.min(10,Math.max(1,_mz.k*factor));
+  const nk=Math.min(12,Math.max(_mz.minK||1,_mz.k*factor));
   _mz.x=px-(px-_mz.x)*(_mz.k/nk);_mz.y=py-(py-_mz.y)*(_mz.k/nk);
   _mz.k=nk;applyMapZoom();}
 (function(){
@@ -1192,9 +1230,8 @@ function mapZoomAt(px,py,factor){
     mapZoomAt(px,py,e.deltaY<0?1.2:1/1.2);},{passive:false});
   el.addEventListener("dblclick",e=>{e.preventDefault();
     const[px,py]=mapClientToSvg(e.clientX,e.clientY);
-    mapZoomAt(px,py,_mz.k>=8?1/_mz.k:2);});
-  document.getElementById("mapReset").addEventListener("click",()=>{
-    _mz={k:1,x:0,y:0};applyMapZoom();});
+    if(_mz.k>=8)mapHome();else mapZoomAt(px,py,2);});
+  document.getElementById("mapReset").addEventListener("click",mapHome);
 })();
 function renderMapInfo(pts){
   const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
@@ -1212,7 +1249,7 @@ document.getElementById("mapChips").addEventListener("click",ev=>{
 document.getElementById("mapViewChips").addEventListener("click",ev=>{
   const c=ev.target.closest("[data-mv]");if(!c)return;
   mapView=c.dataset.mv;PREFS.mapView=mapView;saveJSON(K.prefs,PREFS);
-  _mz={k:1,x:0,y:0};
+  _mz={k:1,x:0,y:0,init:false,minK:1};
   document.querySelectorAll("#mapViewChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderMap();});
 document.querySelectorAll("#mapViewChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.mv===mapView));
@@ -1320,7 +1357,8 @@ function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 document.getElementById("spotFilter").addEventListener("input",debounce(renderSpots,120));
 document.getElementById("logFilter").addEventListener("input",debounce(renderLog,120));
 window.addEventListener("resize",debounce(()=>{
-  if(!document.getElementById("tab-spots").hidden)renderSpots();},150));
+  if(!document.getElementById("tab-spots").hidden)renderSpots();
+  if(!document.getElementById("tab-map").hidden)renderMap();},150));
 document.getElementById("spotRefresh").addEventListener("click",refreshSpots);
 document.getElementById("sortBtn").addEventListener("click",()=>{
   spotSort=spotSort==="freq"?"age":"freq";PREFS.spotSort=spotSort;saveJSON(K.prefs,PREFS);
