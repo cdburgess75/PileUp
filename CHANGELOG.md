@@ -4,6 +4,13 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.14c
+
+**Fixed**
+- Compact spot rows never truncate callsigns: the callsign column sizes
+  itself to the longest call in the current list each refresh, so full
+  calls stay visible while every column stays aligned
+
 ## 2026.07.14b
 
 **Changed**
