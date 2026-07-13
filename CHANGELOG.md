@@ -4,6 +4,12 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.15c
+
+**Changed**
+- Header layout: the version now sits directly under the PILEUP wordmark
+  with the tagline beside it, instead of stretching the tagline line
+
 ## 2026.07.15b
 
 **Added**
