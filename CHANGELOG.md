@@ -4,6 +4,13 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.13a
+
+**Added**
+- Hunter stats panel on the Log tab (▤ Stats): total QSOs, unique callsigns,
+  unique references, and active days, plus QSOs-by-band bars in the app's
+  band colors and QSOs-by-mode counts — all computed live from the log
+
 ## 2026.07.12b
 
 **Added**

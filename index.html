@@ -171,6 +171,7 @@
     font-weight:700;font-size:12px;letter-spacing:.1em;padding:11px 15px;border-radius:8px;
     cursor:pointer;text-transform:uppercase;}
   .btn.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);font-weight:500;}
+  .btn.ghost.on{color:var(--amber);border-color:var(--amber-dim);}
   .btn.sm{padding:8px 12px;font-size:10.5px;}
   .btn:active{transform:translateY(1px);}
   .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
@@ -216,6 +217,20 @@
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:11px;}
   .card h3{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--amber);text-transform:uppercase;}
+
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .stile{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 6px;text-align:center;}
+  .stile .v{font-size:20px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;line-height:1.1;}
+  .stile .l{font-size:8px;letter-spacing:.14em;color:var(--ink-dim);text-transform:uppercase;margin-top:3px;}
+  .sbar{display:grid;grid-template-columns:44px 1fr 34px;gap:8px;align-items:center;margin:5px 0;}
+  .sbar .bl{font-size:10.5px;color:var(--ink);letter-spacing:.04em;white-space:nowrap;}
+  .sbar .bt{display:block;height:10px;background:var(--panel2);border-radius:0 4px 4px 0;overflow:hidden;}
+  .sbar .bf{display:block;height:100%;min-width:2px;background:var(--bc,var(--amber));border-radius:0 4px 4px 0;}
+  [data-theme="light"] .sbar .bf{border:1px solid rgba(0,0,0,.25);}
+  .sbar .bv{font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;}
+  .schip{background:var(--panel2);border:1px solid var(--line);color:var(--ink-dim);font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.06em;padding:5px 10px;border-radius:14px;flex-shrink:0;white-space:nowrap;}
+  .schip b{color:var(--ink);}
   .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
   .formgrid label{display:flex;flex-direction:column;gap:3px;font-size:9px;letter-spacing:.12em;
     color:var(--ink-dim);text-transform:uppercase;}
@@ -312,6 +327,15 @@
       <button class="btn sm" id="newLog">+ New entry</button>
       <button class="btn ghost sm" id="expLog">Export CSV</button>
       <button class="btn ghost sm" id="expAdif">Export ADIF</button>
+      <button class="btn ghost sm" id="statsBtn">▤ Stats</button>
+    </div>
+    <div class="card" id="statsCard" hidden>
+      <h3>◆ Hunter stats</h3>
+      <div class="statgrid" id="statTiles"></div>
+      <div class="hint" style="margin:10px 0 6px">QSOs by band</div>
+      <div id="statBands"></div>
+      <div class="hint" style="margin:10px 0 6px">QSOs by mode</div>
+      <div class="chips" id="statModes" style="margin:0"></div>
     </div>
     <div class="ctrl">
       <input type="search" id="logFilter" placeholder="search call / ref / mode / band / date…" autocomplete="off">
@@ -430,7 +454,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.12b";
+const VERSION="2026.07.13a";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -729,6 +753,7 @@ function logFromSpot(t){
   const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
   openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes});}
 function renderLog(){
+  renderStats();
   const el=document.getElementById("logRows");
   const f=(document.getElementById("logFilter")?.value||"").trim().toLowerCase();
   const list=LOG.map((o,i)=>({o,i})).filter(({o})=>{
@@ -803,6 +828,43 @@ function downloadBlob(name,text,mime){
     a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(u),2000);toast("Saved "+name);}
   catch(e){toast("Download failed");}}
+
+/* ============ hunter stats ============ */
+function modeGroup(m){m=(m||"").toUpperCase();
+  if(m==="CW")return"CW";
+  if(/SSB|USB|LSB|AM|FM|PHONE/.test(m))return"Phone";
+  if(/FT8|FT4|DATA|RTTY|JS8|DIG|PSK|JT|MFSK/.test(m))return"Data";
+  return m?"Other":"—";}
+function renderStats(){
+  const card=document.getElementById("statsCard");if(card.hidden)return;
+  const calls=new Set(),refs=new Set(),days=new Set(),byBand={},byMode={};
+  for(const o of LOG){
+    if(o.station)calls.add(o.station.toUpperCase().trim());
+    if(o.ref)refs.add(o.ref.toUpperCase().trim());
+    if(o.date)days.add(o.date);
+    const b=o.freq?hamBandOf(+o.freq):"";if(b)byBand[b]=(byBand[b]||0)+1;
+    const g=modeGroup(o.mode);byMode[g]=(byMode[g]||0)+1;}
+  document.getElementById("statTiles").innerHTML=[
+    [LOG.length,"QSOs"],[calls.size,"Calls"],[refs.size,"Refs"],[days.size,"Days"]
+  ].map(([v,l])=>'<div class="stile"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>').join("");
+  // One bar per row in fixed band order; identity is the text label, the
+  // band's entity color is reinforcement (matches chips/tags elsewhere).
+  const max=Math.max(1,...Object.values(byBand));
+  document.getElementById("statBands").innerHTML=
+    HAM.map(b=>b[0]).filter(b=>byBand[b]).map(b=>{
+      const n=byBand[b],pct=Math.max(3,Math.round(n/max*100)),c=BAND_COLOR[b]||"";
+      return'<div class="sbar" title="'+b+': '+n+' QSO'+(n>1?'s':'')+'">'+
+        '<span class="bl">'+b.replace(" ","")+'</span>'+
+        '<span class="bt"><span class="bf" style="width:'+pct+'%'+(c?';--bc:'+c:'')+'"></span></span>'+
+        '<span class="bv">'+n+'</span></div>';}).join("")||'<div class="hint">No banded contacts yet.</div>';
+  document.getElementById("statModes").innerHTML=
+    ["CW","Phone","Data","Other","—"].filter(g=>byMode[g]).map(g=>
+      '<span class="schip">'+(g==="—"?"No mode":g)+' <b>'+byMode[g]+'</b></span>').join("");
+}
+document.getElementById("statsBtn").addEventListener("click",()=>{
+  const card=document.getElementById("statsCard"),btn=document.getElementById("statsBtn");
+  card.hidden=!card.hidden;btn.classList.toggle("on",!card.hidden);
+  renderStats();});
 
 /* ============ backup / restore ============ */
 // Duplicate detection for merges: same callsign + UTC date + time is the same
