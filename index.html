@@ -75,6 +75,7 @@
   .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .brand h1{font-size:17px;letter-spacing:.42em;margin:0;color:var(--amber);font-weight:700;}
   .brand .sub{font-size:9.5px;letter-spacing:.28em;color:var(--ink-dim);text-transform:uppercase;}
+  .hdrver{font-size:8.5px;letter-spacing:.1em;color:var(--amber-dim);text-transform:none;white-space:nowrap;}
   .hdr-controls{display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;}
   .tgl-btn{background:none;border:1px solid var(--line);color:var(--ink-dim);font-family:var(--mono);
     font-size:9px;letter-spacing:.08em;padding:4px 9px;border-radius:5px;cursor:pointer;
@@ -359,7 +360,7 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <h1>PILEUP</h1><span class="sub">POTA · SOTA Operating Log</span>
+      <h1>PILEUP</h1><span class="sub">POTA · SOTA Operating Log <span class="hdrver" id="hdrVer"></span></span>
       <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme" style="margin-left:auto">☀</button>
     </div>
     <div class="ident">
@@ -555,7 +556,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15a";
+const VERSION="2026.07.15b";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1388,6 +1389,7 @@ setInterval(()=>{
 openSpots();
 /* ============ version + updates ============ */
 document.getElementById("verLine").textContent="PILEUP v"+VERSION;
+document.getElementById("hdrVer").textContent="v"+VERSION;
 let _upWorker=null,_upTimer=0,_reloaded=false;
 function showUpBanner(worker){
   _upWorker=worker;
