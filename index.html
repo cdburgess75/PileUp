@@ -204,14 +204,16 @@
   .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
-  /* Full callsigns are non-negotiable, so when the row genuinely can't fit,
-     redundant columns shed instead — band pill first (the frequency implies
-     it; the pill still shows expanded), then the mode badge. renderSpots
-     measures the actual list against the actual width and sets these classes;
-     a static breakpoint would drop pills even when short calls leave room. */
-  .rows.tight .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) 40px minmax(30px,1fr) 30px;}
-  .rows.tight .spotrow.clps .cband{display:none;}
-  .rows.xtight .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) minmax(24px,1fr) 30px;}
+  /* Full callsigns AND band pills are non-negotiable. When a long call means
+     the roomy layout can't fit, go dense instead of dropping the pill: hide
+     the MHz unit (every row is MHz), slim the pill to its number, shrink
+     gaps. Only in extremes does the mode badge yield. renderSpots measures
+     the actual list against the actual width and sets these classes. */
+  .rows.tight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px 36px minmax(22px,1fr) 26px;gap:4px;}
+  .rows.tight .spotrow.clps .freq .u{display:none;}
+  .rows.tight .spotrow.clps .tag.band .bu{display:none;}
+  .rows.tight .spotrow.clps .tag.band{padding:2px 6px;}
+  .rows.xtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
   .rows.xtight .spotrow.clps .cmode{display:none;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
@@ -540,7 +542,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.14d";
+const VERSION="2026.07.14e";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -733,7 +735,9 @@ function spotRowHTML(s){
     '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"'+
     (isFinite(s.lat)&&isFinite(s.lng)?' data-lat="'+s.lat+'" data-lng="'+s.lng+'"':'');
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+'"':'';
-  const bandTag=band?'<span class="tag band" '+bc+'>'+band+'</span>':'<span class="tag">--</span>';
+  // Number and unit are separate spans so dense mode can drop the " m".
+  const bandTag=band?'<span class="tag band" '+bc+'>'+band.replace(/\s*m$/i,"")+
+    '<span class="bu"> m</span></span>':'<span class="tag">--</span>';
   const worked=_worked.has((s.call||"").toUpperCase().trim());
   const cls=(stale?' stale':'')+(worked?' worked':'');
   if(!open){
@@ -820,13 +824,13 @@ function renderSpots(){
   // still identical across rows.
   const maxLen=Math.max(4,...list.map(s=>String(s.call||"?").length));
   el.style.setProperty("--callw",(maxLen+0.6)+"ch");
-  // Shed redundant columns only when this list truly can't fit this width
-  // (14px mono ≈ 8.5px/char; 261/208 = fixed column+gap budgets with/without
-  // the band pill). A static breakpoint would hide pills even with room.
+  // Densify only when this list truly can't fit this width (14px mono ≈
+  // 8.5px/char; 261 = roomy column budget, 209 = dense-with-pill budget).
+  // The band pill survives every tier — only the mode badge ever yields.
   if(el.clientWidth>0){
     const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
     el.classList.toggle("tight",261+callPx>avail);
-    el.classList.toggle("xtight",208+callPx>avail);
+    el.classList.toggle("xtight",209+callPx>avail);
   }
   el.innerHTML=list.map(spotRowHTML).join("");
 }
