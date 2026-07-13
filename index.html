@@ -277,12 +277,17 @@
   footer a{color:var(--amber-dim);}
   .verline{margin-top:8px;font-size:9px;letter-spacing:.14em;color:var(--ink-dim);opacity:.75;}
 
-  .upbanner{position:fixed;top:0;left:50%;z-index:90;display:flex;align-items:center;gap:11px;
-    transform:translate(-50%,-130%);transition:transform .4s cubic-bezier(.2,.9,.3,1.1);
-    margin-top:max(12px,env(safe-area-inset-top));padding:9px 12px 9px 15px;
+  /* Bottom placement, above the nav: the top strip of a notched phone belongs
+     to the OS status bar and taps there never reach the page — an update
+     button rendered under it is untappable. */
+  .upbanner{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom, 0px));left:50%;z-index:90;
+    display:flex;align-items:center;gap:11px;
+    transform:translate(-50%,calc(100% + 120px));transition:transform .4s cubic-bezier(.2,.9,.3,1.1);
+    padding:9px 12px 9px 15px;
     background:var(--panel2);border:1px solid var(--amber-dim);border-radius:11px;
     box-shadow:0 10px 30px rgba(0,0,0,.55);max-width:calc(100vw - 24px);white-space:nowrap;}
   .upbanner.show{transform:translate(-50%,0);}
+  @media(min-width:860px){.upbanner{bottom:24px;}}
   .upbanner .up-msg{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink);text-transform:uppercase;}
   .upbanner .up-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;
     animation:updot 1.2s ease-in-out infinite;}
@@ -493,7 +498,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.13b";
+const VERSION="2026.07.13c";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1183,7 +1188,7 @@ setInterval(()=>{
 openSpots();
 /* ============ version + updates ============ */
 document.getElementById("verLine").textContent="PILEUP v"+VERSION;
-let _upWorker=null,_upTimer=0;
+let _upWorker=null,_upTimer=0,_reloaded=false;
 function showUpBanner(worker){
   _upWorker=worker;
   const b=document.getElementById("upBanner");
@@ -1194,6 +1199,9 @@ function showUpBanner(worker){
 document.getElementById("upApply").addEventListener("click",()=>{
   document.getElementById("upBanner").classList.remove("show");
   if(_upWorker)_upWorker.postMessage({type:"SKIP_WAITING"});
+  // controllerchange normally reloads us, but iOS is sometimes slow or
+  // silent about it — reload regardless so the tap always visibly works.
+  setTimeout(()=>{if(!_reloaded){_reloaded=true;location.reload();}},1200);
 });
 document.getElementById("upDismiss").addEventListener("click",()=>{
   clearTimeout(_upTimer);
@@ -1210,7 +1218,6 @@ if("serviceWorker" in navigator){
     document.addEventListener("visibilitychange",()=>{
       if(!document.hidden)reg.update().catch(()=>{});});
   }).catch(()=>{});
-  let _reloaded=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(_reloaded)return;_reloaded=true;location.reload();});
 }

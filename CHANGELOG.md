@@ -4,6 +4,15 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.13c
+
+**Fixed**
+- The update banner rendered under the iPhone status bar, where taps go to
+  the OS instead of the page — the Update button couldn't be pressed. The
+  banner now slides up from the bottom, above the nav bar
+- Tapping Update now always reloads within ~1 s even if the browser is slow
+  to hand control to the new service worker
+
 ## 2026.07.13b
 
 **Added**
