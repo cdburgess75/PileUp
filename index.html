@@ -201,7 +201,7 @@
      The callsign column width (--callw) is set per render to the longest
      call in the list, so calls are never truncated and rows stay aligned. */
   .spotrow.clps{display:grid;align-items:center;gap:5px;padding:9px 8px 9px 10px;font-size:14px;
-    grid-template-columns:11px 72px var(--callw,9ch) 40px 48px minmax(30px,1fr) 30px;}
+    grid-template-columns:11px 72px var(--callw,9ch) 40px 48px var(--refw,52px) minmax(30px,1fr) 30px;}
   /* The frequency is right-aligned to its column edge, so this padding is the
      constant visual gap before the callsign — identical in every row/tier. */
   .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;padding-right:8px;}
@@ -210,6 +210,7 @@
   .spotrow.clps .cmode{display:flex;justify-content:flex-start;}
   .spotrow.clps .cmode .badge{margin-left:0;}
   .spotrow.clps .cband{display:flex;justify-content:center;}
+  .spotrow.clps .cref{font-size:10.5px;color:var(--ink-dim);letter-spacing:.02em;white-space:nowrap;overflow:hidden;}
   .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
@@ -218,12 +219,15 @@
      the MHz unit (every row is MHz), slim the pill to its number, shrink
      gaps. Only in extremes does the mode badge yield. renderSpots measures
      the actual list against the actual width and sets these classes. */
-  .rows.tight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px 36px minmax(22px,1fr) 26px;gap:4px;}
+  .rows.tight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px 36px var(--refw,52px) minmax(22px,1fr) 26px;gap:4px;}
   .rows.tight .spotrow.clps .freq .u{display:none;}
   .rows.tight .spotrow.clps .tag.band .bu{display:none;}
   .rows.tight .spotrow.clps .tag.band{padding:2px 6px;}
-  .rows.xtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
+  .rows.xtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px var(--refw,52px) minmax(20px,1fr) 26px;}
   .rows.xtight .spotrow.clps .cmode{display:none;}
+  /* Last resort on tiny screens + long calls: the ref yields after the mode. */
+  .rows.xxtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
+  .rows.xxtight .spotrow.clps .cref{display:none;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
@@ -566,7 +570,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15.5";
+const VERSION="2026.07.15.006";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -774,6 +778,7 @@ function spotRowHTML(s){
       '<span class="st"><span class="callsign">'+esc(s.call||"?")+'</span></span>'+
       '<span class="cmode">'+md+'</span>'+
       '<span class="cband">'+bandTag+'</span>'+
+      '<span class="cref">'+esc(s.ref||"")+'</span>'+
       '<span class="time">'+age+'</span>'+
       '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span></div>';
   }
@@ -848,14 +853,21 @@ function renderSpots(){
   // still identical across rows.
   const maxLen=Math.max(4,...list.map(s=>String(s.call||"?").length));
   el.style.setProperty("--callw",(maxLen+0.6)+"ch");
+  // The ref column sizes the same way: to the longest ref in the list
+  // (10.5px mono ≈ 6.6px/char), so refs line up and never truncate.
+  const refLen=Math.max(0,...list.map(s=>String(s.ref||"").length));
+  const refPx=refLen?Math.round(refLen*6.6+4):0;
+  el.style.setProperty("--refw",refPx+"px");
   // Densify only when this list truly can't fit this width (14px mono ≈
-  // 8.5px/char; 269 = roomy column budget, 217 = dense-with-pill budget —
-  // both include the 8px freq→callsign breathing gap).
-  // The band pill survives every tier — only the mode badge ever yields.
+  // 8.5px/char; 274/217/177 = roomy / dense / dense-no-mode column budgets,
+  // all including the 8px freq→callsign breathing gap and the ref gap).
+  // Shed order under pressure: slim units → mode badge → ref. The callsign
+  // and band pill survive every tier.
   if(el.clientWidth>0){
     const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
-    el.classList.toggle("tight",269+callPx>avail);
-    el.classList.toggle("xtight",217+callPx>avail);
+    el.classList.toggle("tight",274+callPx+refPx>avail);
+    el.classList.toggle("xtight",217+callPx+refPx>avail);
+    el.classList.toggle("xxtight",177+callPx+refPx>avail);
   }
   el.innerHTML=list.map(spotRowHTML).join("");
 }
