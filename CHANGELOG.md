@@ -4,6 +4,14 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.13d
+
+**Added**
+- World view on the Map tab: a real world map (Natural Earth coastline,
+  embedded — still zero network dependencies) with spots and logged contacts
+  plotted geographically. The bearing-based radar remains as a second view;
+  your choice persists
+
 ## 2026.07.13c
 
 **Fixed**
