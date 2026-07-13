@@ -4,6 +4,14 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.14a
+
+**Changed**
+- Spot rows now start collapsed to one compact line (▶ triangle, frequency,
+  callsign, band, age, ＋). Tap a row to expand its full details; tap the
+  expanded row to log it; tap the triangle to collapse. The compact ＋ logs
+  straight from the collapsed row, and expansion survives auto-refresh
+
 ## 2026.07.13d
 
 **Added**

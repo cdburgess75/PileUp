@@ -180,8 +180,20 @@
   .row{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;
     background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;}
   .row.stale{opacity:.55;}
-  .spotrow{cursor:pointer;}
+  .spotrow{cursor:pointer;position:relative;}
   .spotrow:active{border-color:var(--amber-dim);background:var(--panel2);}
+  .exp-tgl{color:var(--ink-dim);font-size:8px;line-height:1;flex-shrink:0;width:12px;text-align:center;
+    transition:transform .15s ease;user-select:none;}
+  .spotrow.clps{display:flex;align-items:center;gap:9px;padding:9px 11px;}
+  .spotrow.clps .freq{font-size:15px;white-space:nowrap;}
+  .spotrow.clps .freq .u{display:inline;font-size:8px;margin-left:3px;letter-spacing:.1em;}
+  .spotrow.clps .st{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .spotrow.clps .cright{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+  .spotrow.clps .time{font-size:11px;}
+  .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
+  .spotrow.clps .act.log{font-size:13px;padding:2px 9px;line-height:1.3;}
+  .spotrow.exp{padding-left:24px;}
+  .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
   .spotrow.worked .callsign{text-decoration:line-through;text-decoration-color:var(--green);text-decoration-thickness:2px;}
   .wkd{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.1em;padding:1px 5px;border-radius:3px;
@@ -507,7 +519,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.13d";
+const VERSION="2026.07.14a";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -688,28 +700,46 @@ function openSpots(force){renderSpots();const pack=SPOTS[spotProg]||{ts:0};
   if(navigator.onLine&&(force||Date.now()-pack.ts>60000))refreshSpots();}
 function setSpotSpin(on){const b=document.getElementById("spotRefresh");if(!b)return;
   b.innerHTML=on?'<span class="upd-spin">⟳</span>':'⟳';b.disabled=on;}
+// Expansion state keyed by spot identity so it survives the 60 s re-render.
+let _expandedSpots=new Set();
+function spotKey(s){return(s.call||"")+"|"+(s.ref||"")+"|"+Math.round(s.freq);}
 function spotRowHTML(s){
   // 45 min with no re-spot usually means the activation is over; dim the row.
   const ms=+new Date(s.when),age=ageStr(ms),stale=Date.now()-ms>45*60000;
   const band=hamBandOf(s.freq),md=s.mode?'<span class="badge">'+esc(s.mode)+'</span>':'';
-  const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
-  const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
-  const da='data-act="spotlog" data-f="'+attr(Math.round(s.freq))+'" data-call="'+attr(s.call)+
+  const key=spotKey(s),open=_expandedSpots.has(key);
+  const da='data-act="spotlog" data-key="'+attr(key)+'" data-f="'+attr(Math.round(s.freq))+'" data-call="'+attr(s.call)+
     '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"'+
     (isFinite(s.lat)&&isFinite(s.lng)?' data-lat="'+s.lat+'" data-lng="'+s.lng+'"':'');
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+'"':'';
+  const bandTag=band?'<span class="tag band" '+bc+'>'+band+'</span>':'<span class="tag">--</span>';
+  const worked=_worked.has((s.call||"").toUpperCase().trim());
+  const cls=(stale?' stale':'')+(worked?' worked':'');
+  if(!open){
+    // Compact single line: tap the row to expand, tap ＋ to log directly.
+    return '<div class="row spotrow clps'+cls+'" '+da+' role="button" tabindex="0"'+
+      ' aria-expanded="false" aria-label="Expand '+attr(s.call||s.ref)+'">'+
+      '<span class="exp-tgl">▶</span>'+
+      '<span class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></span>'+
+      '<span class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+'</span>'+
+      '<span class="cright">'+bandTag+'<span class="time">'+age+'</span>'+
+      '<span class="act log" title="Log '+attr(s.call)+'">＋</span></span></div>';
+  }
+  const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
+  const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
+  const wkd=worked?'<span class="wkd">✓ worked</span>':'';
   let distStr='';
   if(isFinite(s.lat)&&isFinite(s.lng)){
     const km=Math.round(haversine(GEO.lat,GEO.lng,s.lat,s.lng));
     const bear=Math.round(bearing(GEO.lat,GEO.lng,s.lat,s.lng));
     distStr='<span class="dist">'+km+' km · '+bear+'°</span>';}
-  const worked=_worked.has((s.call||"").toUpperCase().trim());
-  const wkd=worked?'<span class="wkd">✓ worked</span>':'';
-  return '<div class="row spotrow'+(stale?' stale':'')+(worked?' worked':'')+'" '+da+' role="button" tabindex="0" aria-label="Log '+attr(s.call||s.ref)+'">'+
+  return '<div class="row spotrow exp'+cls+'" '+da+' role="button" tabindex="0"'+
+    ' aria-expanded="true" aria-label="Log '+attr(s.call||s.ref)+'">'+
+    '<span class="exp-tgl">▶</span>'+
     '<div class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></div>'+
     '<div class="mid"><div class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+wkd+'</div>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+cmt+'</div>'+
-    '<div class="right">'+(band?'<span class="tag band" '+bc+'>'+band+'</span>':'<span class="tag">--</span>')+
+    '<div class="right">'+bandTag+
     '<span class="time">'+age+'</span>'+distStr+
     '<span class="acts"><span class="act log">＋ log</span></span></div></div>';
 }
@@ -1147,7 +1177,15 @@ document.addEventListener("visibilitychange",()=>{
 document.addEventListener("click",ev=>{
   const t=ev.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(a==="spotlog"){logFromSpot(t);}
+  if(a==="spotlog"){
+    // Triangle toggles; a collapsed row expands on tap (except its ＋, which
+    // logs directly); an expanded row opens the log form.
+    const key=t.dataset.key,onTgl=!!ev.target.closest(".exp-tgl"),
+      onLog=!!ev.target.closest(".act.log");
+    if(onTgl){_expandedSpots.has(key)?_expandedSpots.delete(key):_expandedSpots.add(key);renderSpots();}
+    else if(t.classList.contains("clps")&&!onLog){_expandedSpots.add(key);renderSpots();}
+    else{logFromSpot(t);}
+  }
   else if(a==="editlog"){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id),o=LOG[i];if(!o)return;
     openLog({date:o.date,time:o.time,freq:o.freq,mode:o.mode,station:o.station,
       rst:o.rst_sent||"",rst_rcvd:o.rst_rcvd||"",ref:o.ref,notes:o.notes},i);}

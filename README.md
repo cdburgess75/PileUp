@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.13d-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.14a-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -58,7 +58,7 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 
 | Area | Functionality |
 |---|---|
-| **Spot feed** | Live POTA + SOTA spots, auto-refreshed every 60 s (pauses when hidden or repeatedly failing) |
+| **Spot feed** | Live POTA + SOTA spots in compact expandable rows, auto-refreshed every 60 s (pauses when hidden or repeatedly failing) |
 | **Filtering** | Band chips, mode chips (CW / Phone / Data), free-text search; sort by frequency or age; settings persist |
 | **Navigation aids** | Distance (km) and bearing (°) to every activation, computed from your saved coordinates |
 | **Worked tracking** | Logged callsigns struck through in the spot list until 0000 UTC; duplicate warning when logging |
