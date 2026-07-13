@@ -184,14 +184,18 @@
   .spotrow:active{border-color:var(--amber-dim);background:var(--panel2);}
   .exp-tgl{color:var(--ink-dim);font-size:8px;line-height:1;flex-shrink:0;width:12px;text-align:center;
     transition:transform .15s ease;user-select:none;}
-  .spotrow.clps{display:flex;align-items:center;gap:9px;padding:9px 11px;}
-  .spotrow.clps .freq{font-size:15px;white-space:nowrap;}
-  .spotrow.clps .freq .u{display:inline;font-size:8px;margin-left:3px;letter-spacing:.1em;}
+  /* Fixed grid so freq / call / mode / band / age / ＋ align down the list. */
+  .spotrow.clps{display:grid;align-items:center;gap:6px;padding:9px 8px 9px 10px;
+    grid-template-columns:11px 78px minmax(0,1fr) 42px 52px 30px 30px;}
+  .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;}
+  .spotrow.clps .freq .u{display:inline;font-size:8px;margin-left:2px;letter-spacing:.08em;}
   .spotrow.clps .st{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
-  .spotrow.clps .cright{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
-  .spotrow.clps .time{font-size:11px;}
+  .spotrow.clps .cmode{display:flex;justify-content:flex-start;}
+  .spotrow.clps .cmode .badge{margin-left:0;}
+  .spotrow.clps .cband{display:flex;justify-content:center;}
+  .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
-  .spotrow.clps .act.log{font-size:13px;padding:2px 9px;line-height:1.3;}
+  .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
@@ -519,7 +523,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.14a";
+const VERSION="2026.07.14b";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -717,13 +721,16 @@ function spotRowHTML(s){
   const cls=(stale?' stale':'')+(worked?' worked':'');
   if(!open){
     // Compact single line: tap the row to expand, tap ＋ to log directly.
+    // Every field sits in its own grid column so the list reads as a table.
     return '<div class="row spotrow clps'+cls+'" '+da+' role="button" tabindex="0"'+
       ' aria-expanded="false" aria-label="Expand '+attr(s.call||s.ref)+'">'+
       '<span class="exp-tgl">▶</span>'+
       '<span class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></span>'+
-      '<span class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+'</span>'+
-      '<span class="cright">'+bandTag+'<span class="time">'+age+'</span>'+
-      '<span class="act log" title="Log '+attr(s.call)+'">＋</span></span></div>';
+      '<span class="st"><span class="callsign">'+esc(s.call||"?")+'</span></span>'+
+      '<span class="cmode">'+md+'</span>'+
+      '<span class="cband">'+bandTag+'</span>'+
+      '<span class="time">'+age+'</span>'+
+      '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span></div>';
   }
   const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
   const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
@@ -734,14 +741,14 @@ function spotRowHTML(s){
     const bear=Math.round(bearing(GEO.lat,GEO.lng,s.lat,s.lng));
     distStr='<span class="dist">'+km+' km · '+bear+'°</span>';}
   return '<div class="row spotrow exp'+cls+'" '+da+' role="button" tabindex="0"'+
-    ' aria-expanded="true" aria-label="Log '+attr(s.call||s.ref)+'">'+
+    ' aria-expanded="true" aria-label="Collapse '+attr(s.call||s.ref)+'">'+
     '<span class="exp-tgl">▶</span>'+
     '<div class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></div>'+
     '<div class="mid"><div class="st"><span class="callsign">'+esc(s.call||"?")+'</span>'+md+wkd+'</div>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+cmt+'</div>'+
     '<div class="right">'+bandTag+
     '<span class="time">'+age+'</span>'+distStr+
-    '<span class="acts"><span class="act log">＋ log</span></span></div></div>';
+    '<span class="acts"><span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋ log</span></span></div></div>';
 }
 function renderBandChips(){
   const el=document.getElementById("spotBandChips");if(!el)return;
@@ -1165,11 +1172,13 @@ document.getElementById("lgDelete").addEventListener("click",()=>{
   LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast("Deleted");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
 // Enter/Space activate the role="button" spot rows and edit/del controls.
+// Click the focused element itself so a focused ＋ logs while a focused row
+// toggles — same branching the pointer path uses.
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter"&&e.key!==" ")return;
   const t=e.target.closest&&e.target.closest("[data-act]");
   if(!t||t===document)return;
-  e.preventDefault();t.click();});
+  e.preventDefault();e.target.click();});
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden||document.getElementById("tab-spots").hidden||!navigator.onLine)return;
   const pack=SPOTS[spotProg]||{ts:0};if(Date.now()-pack.ts>60000)refreshSpots();});
@@ -1178,13 +1187,11 @@ document.addEventListener("click",ev=>{
   const t=ev.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
   if(a==="spotlog"){
-    // Triangle toggles; a collapsed row expands on tap (except its ＋, which
-    // logs directly); an expanded row opens the log form.
-    const key=t.dataset.key,onTgl=!!ev.target.closest(".exp-tgl"),
-      onLog=!!ev.target.closest(".act.log");
-    if(onTgl){_expandedSpots.has(key)?_expandedSpots.delete(key):_expandedSpots.add(key);renderSpots();}
-    else if(t.classList.contains("clps")&&!onLog){_expandedSpots.add(key);renderSpots();}
-    else{logFromSpot(t);}
+    // Tapping the row (or triangle) toggles expand/collapse; logging happens
+    // only on the explicit ＋ buttons, so an expanded row can always be closed.
+    const key=t.dataset.key;
+    if(ev.target.closest(".act.log")){logFromSpot(t);}
+    else{_expandedSpots.has(key)?_expandedSpots.delete(key):_expandedSpots.add(key);renderSpots();}
   }
   else if(a==="editlog"){const id=+t.dataset.id,i=LOG.findIndex(e=>e.created===id),o=LOG[i];if(!o)return;
     openLog({date:o.date,time:o.time,freq:o.freq,mode:o.mode,station:o.station,

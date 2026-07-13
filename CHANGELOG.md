@@ -4,6 +4,15 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.14b
+
+**Changed**
+- Tapping a spot row now always toggles expand/collapse; logging happens only
+  on the explicit ＋ buttons (an expanded row previously couldn't be closed
+  by tapping it — it opened the log form instead)
+- Compact spot rows are now a fixed-column grid so frequencies, callsigns,
+  mode badges, band pills, ages, and ＋ buttons align down the list
+
 ## 2026.07.14a
 
 **Changed**
