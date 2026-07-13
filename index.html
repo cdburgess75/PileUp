@@ -154,8 +154,14 @@
     border-radius:20px;cursor:pointer;transition:.15s;flex-shrink:0;}
   .bchip.on{border-width:1.5px;font-weight:700;
     text-shadow:0 0 8px var(--bc,var(--amber));box-shadow:0 0 10px var(--bc,var(--amber));}
-  [data-theme="light"] .bchip{background:var(--panel);}
-  [data-theme="light"] .bchip.on{background:var(--bc,var(--amber));color:#000;text-shadow:none;box-shadow:none;}
+  /* The neon band colors are tuned for black; on white they wash out (17 m /
+     20 m especially). Mix them toward ink — 42% band color keeps every band
+     at or above 4.5:1 contrast while the hue stays recognizable. */
+  [data-theme="light"] .bchip{background:var(--panel);
+    color:color-mix(in srgb,var(--bc,var(--ink-dim)) 42%,#12202f);
+    border-color:color-mix(in srgb,var(--bc,var(--line)) 55%,#5a6572);}
+  [data-theme="light"] .bchip.on{background:var(--bc,var(--amber));color:#000;text-shadow:none;box-shadow:none;
+    border-color:color-mix(in srgb,var(--bc,var(--line)) 55%,#5a6572);}
 
   .ctrl{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 11px;}
   input[type=text],input[type=search],input[type=number],select,textarea{
@@ -198,17 +204,15 @@
   .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
-  /* Narrow phones: full callsigns are non-negotiable, so shed the redundant
-     columns instead — band first (the frequency implies it; the pill still
-     shows expanded), then the mode badge on the smallest screens. */
-  @media(max-width:399px){
-    .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) 40px minmax(30px,1fr) 30px;}
-    .spotrow.clps .cband{display:none;}
-  }
-  @media(max-width:349px){
-    .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) minmax(24px,1fr) 30px;}
-    .spotrow.clps .cmode{display:none;}
-  }
+  /* Full callsigns are non-negotiable, so when the row genuinely can't fit,
+     redundant columns shed instead — band pill first (the frequency implies
+     it; the pill still shows expanded), then the mode badge. renderSpots
+     measures the actual list against the actual width and sets these classes;
+     a static breakpoint would drop pills even when short calls leave room. */
+  .rows.tight .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) 40px minmax(30px,1fr) 30px;}
+  .rows.tight .spotrow.clps .cband{display:none;}
+  .rows.xtight .spotrow.clps{grid-template-columns:11px 72px var(--callw,9ch) minmax(24px,1fr) 30px;}
+  .rows.xtight .spotrow.clps .cmode{display:none;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
@@ -536,7 +540,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.14c";
+const VERSION="2026.07.14d";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -814,7 +818,16 @@ function renderSpots(){
   // Size the callsign column to the longest call in the list (monospace, so
   // character count is exact width): full callsigns always visible, columns
   // still identical across rows.
-  el.style.setProperty("--callw",(Math.max(4,...list.map(s=>String(s.call||"?").length))+0.6)+"ch");
+  const maxLen=Math.max(4,...list.map(s=>String(s.call||"?").length));
+  el.style.setProperty("--callw",(maxLen+0.6)+"ch");
+  // Shed redundant columns only when this list truly can't fit this width
+  // (14px mono ≈ 8.5px/char; 261/208 = fixed column+gap budgets with/without
+  // the band pill). A static breakpoint would hide pills even with room.
+  if(el.clientWidth>0){
+    const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
+    el.classList.toggle("tight",261+callPx>avail);
+    el.classList.toggle("xtight",208+callPx>avail);
+  }
   el.innerHTML=list.map(spotRowHTML).join("");
 }
 
@@ -1179,6 +1192,8 @@ document.querySelectorAll("#spotChips .chip").forEach(c=>c.addEventListener("cli
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 document.getElementById("spotFilter").addEventListener("input",debounce(renderSpots,120));
 document.getElementById("logFilter").addEventListener("input",debounce(renderLog,120));
+window.addEventListener("resize",debounce(()=>{
+  if(!document.getElementById("tab-spots").hidden)renderSpots();},150));
 document.getElementById("spotRefresh").addEventListener("click",refreshSpots);
 document.getElementById("sortBtn").addEventListener("click",()=>{
   spotSort=spotSort==="freq"?"age":"freq";PREFS.spotSort=spotSort;saveJSON(K.prefs,PREFS);
