@@ -413,6 +413,12 @@
 
   <!-- ============ LOG ============ -->
   <section id="tab-log" hidden>
+    <div class="seg" id="seg-log">
+      <button data-lp="all" class="on">All</button>
+      <button data-lp="pota">POTA</button>
+      <button data-lp="sota">SOTA</button>
+      <button data-lp="other">Other</button>
+    </div>
     <div class="btnrow">
       <button class="btn sm" id="newLog">+ New entry</button>
       <button class="btn ghost sm" id="expLog">Export CSV</button>
@@ -572,7 +578,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15.007";
+const VERSION="2026.07.15.008";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -607,6 +613,7 @@ let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts
 let spotProg="pota",spotMode=PREFS.spotMode||"all",spotBand=PREFS.spotBand||"all",spotStatus="";
 let editIdx=-1;
 let spotSort=PREFS.spotSort||"freq";
+let logProg=PREFS.logProg||"all";
 const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0}};
 let _worked=new Set();
 
@@ -935,24 +942,34 @@ function logFromSpot(t){
   const lat=parseFloat(t.dataset.lat),lng=parseFloat(t.dataset.lng);
   openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,
     lat:isFinite(lat)?lat:undefined,lng:isFinite(lng)?lng:undefined});}
+// Classify an entry by its reference format, mirroring the ADIF export:
+// "/" means SOTA (association/summit), XX-NNNN means POTA, anything else
+// (or no ref at all) is a general contact.
+function logProgOf(o){const ref=(o.ref||"").trim();
+  if(!ref)return"other";
+  if(ref.includes("/"))return"sota";
+  if(/^[A-Z]{1,6}-\d+$/i.test(ref))return"pota";
+  return"other";}
 function renderLog(){
   renderStats();
   const el=document.getElementById("logRows");
   const f=(document.getElementById("logFilter")?.value||"").trim().toLowerCase();
   const list=LOG.map((o,i)=>({o,i})).filter(({o})=>{
+    if(logProg!=="all"&&logProgOf(o)!==logProg)return false;
     if(!f)return true;
     const band=o.freq?(hamBandOf(+o.freq)||""):"";
     const hay=[o.station,o.ref,o.mode,o.date,o.time,o.notes,o.freq,
       band,band.replace(/\s/g,"")].join(" ").toLowerCase();
     return f.split(/\s+/).every(t=>hay.includes(t));
   }).sort((a,b)=>b.o.created-a.o.created);
+  const narrowed=f||logProg!=="all";
   document.getElementById("logCount").innerHTML=
-    f?'<b>'+list.length+'</b> of '+LOG.length+' entries':
+    narrowed?'<b>'+list.length+'</b> of '+LOG.length+' entries':
     (list.length?'<b>'+list.length+'</b> entries':"");
-  if(!list.length){el.innerHTML='<div class="empty">'+(f?
-    'No entries match "<b>'+esc(f)+'</b>".':
+  if(!list.length){el.innerHTML='<div class="empty">'+(narrowed?
+    'No '+(logProg==="all"?"":logProg.toUpperCase()+" ")+'entries'+(f?' match "<b>'+esc(f)+'</b>"':'')+'.':
     'No log entries yet.<br>Tap <b>＋ log</b> on a spot, or <b>+ New entry</b>.')+'</div>';
-    if(!f){const bm=document.getElementById("logBadgeMobile"),bd=document.getElementById("logBadgeDesktop");
+    if(!narrowed){const bm=document.getElementById("logBadgeMobile"),bd=document.getElementById("logBadgeDesktop");
       if(bm)bm.textContent="";if(bd)bd.textContent="";}
     return;}
   el.innerHTML=list.map(({o,i})=>{
@@ -1290,6 +1307,10 @@ document.querySelectorAll("#seg-spots button").forEach(b=>b.addEventListener("cl
   spotProg=b.dataset.sub;spotBand="all";PREFS.spotBand="all";saveJSON(K.prefs,PREFS);
   document.querySelectorAll("#seg-spots button").forEach(x=>x.classList.toggle("on",x===b));
   openSpots(true);}));
+document.querySelectorAll("#seg-log button").forEach(b=>b.addEventListener("click",()=>{
+  logProg=b.dataset.lp;PREFS.logProg=logProg;saveJSON(K.prefs,PREFS);
+  document.querySelectorAll("#seg-log button").forEach(x=>x.classList.toggle("on",x===b));
+  renderLog();}));
 document.querySelectorAll("#spotChips .chip").forEach(c=>c.addEventListener("click",()=>{
   spotMode=c.dataset.sm;PREFS.spotMode=spotMode;saveJSON(K.prefs,PREFS);
   document.querySelectorAll("#spotChips .chip").forEach(x=>x.classList.toggle("on",x===c));
@@ -1400,6 +1421,7 @@ document.getElementById("geoLat").value=GEO.lat;
 document.getElementById("geoLng").value=GEO.lng;
 renderIdent();renderLog();
 document.querySelectorAll("#spotChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.sm===spotMode));
+document.querySelectorAll("#seg-log button").forEach(b=>b.classList.toggle("on",b.dataset.lp===logProg));
 document.getElementById("sortBtn").textContent=spotSort==="freq"?"≡ Freq":"≡ Age";
 tick();setInterval(tick,1000);
 // Auto-refresh every 60 s while visible, online, and on the Spots tab.

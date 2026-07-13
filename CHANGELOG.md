@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.15.008
+
+**Added**
+- Log tab: All / POTA / SOTA / Other segmented filter, styled like the
+  Spots tab switch. Entries classify by their reference format (XX-NNNN =
+  POTA, refs with "/" = SOTA, everything else = Other), your choice
+  persists, and exports/imports still cover the whole book
+
 ## 2026.07.15.007
 
 **Fixed**
