@@ -218,6 +218,22 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:11px;}
   .card h3{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--amber);text-transform:uppercase;}
 
+  #mapSvg svg{display:block;width:100%;height:auto;}
+  .mapring{fill:none;stroke:var(--line);stroke-width:1;}
+  .mapaxis{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4;}
+  .maplbl{fill:var(--ink-dim);font-family:var(--mono);font-size:9px;letter-spacing:.1em;}
+  .mapkm{fill:var(--ink-dim);font-family:var(--mono);font-size:8px;opacity:.8;}
+  .mdot-spot{fill:none;stroke:var(--amber);stroke-width:1.6;cursor:pointer;}
+  .mdot-log{fill:var(--green);stroke:var(--bg);stroke-width:1;cursor:pointer;}
+  .mdot-qth{fill:var(--amber);}
+  .mqth-pulse{fill:none;stroke:var(--amber);stroke-width:1;opacity:.5;}
+  .maplegend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:9.5px;
+    color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
+  .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
+  .mk-spot{border:1.6px solid var(--amber);}
+  .mk-log{background:var(--green);}
+  .mk-qth{background:var(--amber);}
+
   .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
   .stile{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 6px;text-align:center;}
   .stile .v{font-size:20px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;line-height:1.1;}
@@ -281,6 +297,7 @@
   <div class="snav-brand"><span style="font-size:18px;display:block;margin-bottom:4px">◎</span>PileUp</div>
   <button class="snav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
   <button class="snav-btn" data-tab="log"><span class="bicon">✦</span>Log<span class="nav-badge" id="logBadgeDesktop"></span></button>
+  <button class="snav-btn" data-tab="map"><span class="bicon">⌖</span>Map</button>
   <button class="snav-btn" data-tab="tools"><span class="bicon">⚙</span>Tools</button>
 </nav>
 <div class="wrap">
@@ -342,6 +359,27 @@
     </div>
     <div class="count" id="logCount"></div>
     <div class="rows" id="logRows"></div>
+  </section>
+
+  <!-- ============ MAP ============ -->
+  <section id="tab-map" hidden>
+    <div class="chips" id="mapChips">
+      <span class="chip on" data-ml="both">All</span>
+      <span class="chip" data-ml="spots">Live spots</span>
+      <span class="chip" data-ml="log">Logged</span>
+    </div>
+    <div class="card" style="padding:10px">
+      <div id="mapSvg"></div>
+      <div class="maplegend">
+        <span><span class="mkey mk-spot"></span> live spot</span>
+        <span><span class="mkey mk-log"></span> logged QSO</span>
+        <span><span class="mkey mk-qth"></span> your QTH</span>
+      </div>
+      <div class="hint" id="mapInfo" style="min-height:16px;margin-top:6px;text-align:center"></div>
+    </div>
+    <div class="hint" style="margin-top:2px">Azimuthal view from your station — bearing is the
+      direction to point your antenna. Logged contacts appear here once saved from a spot
+      (coordinates are captured automatically from now on).</div>
   </section>
 
   <!-- ============ TOOLS ============ -->
@@ -449,12 +487,13 @@
 <nav class="bottomnav" id="bottomNav">
   <button class="bnav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
   <button class="bnav-btn" data-tab="log"><span class="bicon">✦</span>Log<span class="nav-badge" id="logBadgeMobile"></span></button>
+  <button class="bnav-btn" data-tab="map"><span class="bicon">⌖</span>Map</button>
   <button class="bnav-btn" data-tab="tools"><span class="bicon">⚙</span>Tools</button>
 </nav>
 
 <script>
 "use strict";
-const VERSION="2026.07.13a";
+const VERSION="2026.07.13b";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -636,7 +675,8 @@ function spotRowHTML(s){
   const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
   const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
   const da='data-act="spotlog" data-f="'+attr(Math.round(s.freq))+'" data-call="'+attr(s.call)+
-    '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"';
+    '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"'+
+    (isFinite(s.lat)&&isFinite(s.lng)?' data-lat="'+s.lat+'" data-lng="'+s.lng+'"':'');
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+'"':'';
   let distStr='';
   if(isFinite(s.lat)&&isFinite(s.lng)){
@@ -706,12 +746,15 @@ function renderSpots(){
 
 /* ============ logbook ============ */
 let _lastFocus=null;
-function closeLog(){editIdx=-1;document.getElementById("lgSave").textContent="Save";
+function closeLog(){editIdx=-1;_pendingCoords=null;document.getElementById("lgSave").textContent="Save";
   const ld=document.getElementById("lgDelete");if(ld)ld.style.display="none";
   document.getElementById("logModal").hidden=true;
   if(_lastFocus&&document.contains(_lastFocus)){_lastFocus.focus();}_lastFocus=null;}
+let _pendingCoords=null;
 function openLog(pre,idx){pre=pre||{};const d=new Date();
   editIdx=(typeof idx==="number")?idx:-1;
+  // Spot coordinates ride along invisibly so the map can plot the QSO later.
+  _pendingCoords=(isFinite(pre.lat)&&isFinite(pre.lng))?{lat:pre.lat,lng:pre.lng}:null;
   document.getElementById("lgSave").textContent=editIdx>=0?"Update":"Save";
   document.getElementById("logTitle").textContent=pre.title||(editIdx>=0?"◆ Edit entry":"◆ Log entry");
   document.getElementById("lgDate").value=pre.date||d.toISOString().slice(0,10);
@@ -742,7 +785,15 @@ function saveLog(){
     created:Date.now()};
   if(!o.freq&&!o.station){toast("Add a frequency or callsign");return;}
   const wasEdit=editIdx>=0;
-  if(wasEdit){o.created=LOG[editIdx].created;LOG[editIdx]=o;}else{LOG.push(o);}
+  if(wasEdit){
+    // Keep coordinates through edits — the form has no lat/lng fields.
+    const old=LOG[editIdx];o.created=old.created;
+    if(isFinite(old.lat)&&isFinite(old.lng)){o.lat=old.lat;o.lng=old.lng;}
+    LOG[editIdx]=o;
+  }else{
+    if(_pendingCoords){o.lat=_pendingCoords.lat;o.lng=_pendingCoords.lng;}
+    LOG.push(o);
+  }
   saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(wasEdit?"Updated":"Logged");}
 function logFromSpot(t){
   const prog=(t.dataset.prog||spotProg).toUpperCase(),mode=t.dataset.md||"",
@@ -751,7 +802,9 @@ function logFromSpot(t){
   const notes=[prog+" "+ref+(name?" — "+name:""),f?(+f/1000).toFixed(3)+" MHz":"",mode].filter(Boolean).join(" · ");
   const today=new Date().toISOString().slice(0,10);
   const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
-  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes});}
+  const lat=parseFloat(t.dataset.lat),lng=parseFloat(t.dataset.lng);
+  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,
+    lat:isFinite(lat)?lat:undefined,lng:isFinite(lng)?lng:undefined});}
 function renderLog(){
   renderStats();
   const el=document.getElementById("logRows");
@@ -866,6 +919,70 @@ document.getElementById("statsBtn").addEventListener("click",()=>{
   card.hidden=!card.hidden;btn.classList.toggle("on",!card.hidden);
   renderStats();});
 
+/* ============ map (azimuthal QTH radar) ============ */
+/* No geographic tiles — the CSP forbids external hosts and field coverage is
+   unreliable anyway. Instead: an azimuthal plot centered on the operator.
+   Angle = true bearing (what you'd turn a beam antenna to), radius = distance
+   on a log scale so 300 km and 12000 km both stay readable. */
+let mapLayer="both";
+const MAP_RINGS=[100,1000,10000];      // km, labeled
+const MAP_MAX_KM=20000;                // half the planet ≈ outer edge
+function mapR(km){const rmax=178;
+  return rmax*Math.log10(1+km/25)/Math.log10(1+MAP_MAX_KM/25);}
+function mapPoints(){
+  const pts=[];
+  if(mapLayer!=="log")for(const prog of["pota","sota"])
+    for(const s of(SPOTS[prog].list||[]))
+      if(isFinite(s.lat)&&isFinite(s.lng))
+        pts.push({kind:"spot",call:s.call,ref:s.ref,lat:s.lat,lng:s.lng});
+  if(mapLayer!=="spots")for(const o of LOG)
+    if(isFinite(o.lat)&&isFinite(o.lng))
+      pts.push({kind:"log",call:o.station,ref:o.ref,lat:o.lat,lng:o.lng,date:o.date});
+  return pts;}
+function renderMap(){
+  const el=document.getElementById("mapSvg");if(!el)return;
+  const C=200,pts=mapPoints();
+  let svg='<svg viewBox="0 0 400 400" role="img" aria-label="Azimuthal map of spots and logged contacts">';
+  svg+='<line class="mapaxis" x1="200" y1="14" x2="200" y2="386"/>'+
+       '<line class="mapaxis" x1="14" y1="200" x2="386" y2="200"/>';
+  for(const km of MAP_RINGS){const r=mapR(km);
+    svg+='<circle class="mapring" cx="200" cy="200" r="'+r.toFixed(1)+'"/>'+
+      '<text class="mapkm" x="'+(C+3)+'" y="'+(C-r-3).toFixed(1)+'">'+
+      (km>=1000?(km/1000)+"k":km)+'</text>';}
+  svg+='<circle class="mapring" cx="200" cy="200" r="178"/>';
+  svg+='<text class="maplbl" x="200" y="10" text-anchor="middle">N</text>'+
+       '<text class="maplbl" x="394" y="204" text-anchor="middle">E</text>'+
+       '<text class="maplbl" x="200" y="398" text-anchor="middle">S</text>'+
+       '<text class="maplbl" x="6" y="204" text-anchor="middle">W</text>';
+  let i=0;
+  for(const p of pts){
+    const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng);
+    const br=bearing(GEO.lat,GEO.lng,p.lat,p.lng)*Math.PI/180;
+    const r=mapR(km),x=C+r*Math.sin(br),y=C-r*Math.cos(br);
+    const label=(p.call||"?")+(p.ref?" · "+p.ref:"")+" · "+Math.round(km)+" km · "+
+      Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng))+"°"+(p.date?" · "+p.date:"");
+    svg+='<circle class="mdot-'+p.kind+'" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+
+      '" cy="'+y.toFixed(1)+'" r="'+(p.kind==="log"?4.5:4)+'"><title>'+esc(label)+'</title></circle>';
+    i++;}
+  svg+='<circle class="mqth-pulse" cx="200" cy="200" r="8"/>'+
+       '<circle class="mdot-qth" cx="200" cy="200" r="4"/></svg>';
+  el.innerHTML=svg;
+  const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
+  document.getElementById("mapInfo").textContent=
+    pts.length?(mapLayer==="log"?n+" logged contacts plotted":
+      mapLayer==="spots"?s+" live spots plotted":
+      s+" spots · "+n+" logged — tap a dot for details"):
+    "Nothing to plot yet — open Spots to fetch, or log a contact from a spot.";
+}
+document.getElementById("mapChips").addEventListener("click",ev=>{
+  const c=ev.target.closest("[data-ml]");if(!c)return;
+  mapLayer=c.dataset.ml;
+  document.querySelectorAll("#mapChips .chip").forEach(x=>x.classList.toggle("on",x===c));
+  renderMap();});
+document.getElementById("mapSvg").addEventListener("click",ev=>{
+  const d=ev.target.closest("[data-mi]");if(!d)return;
+  document.getElementById("mapInfo").textContent=d.dataset.mi;});
+
 /* ============ backup / restore ============ */
 // Duplicate detection for merges: same callsign + UTC date + time is the same
 // contact regardless of which file it came from.
@@ -882,10 +999,12 @@ function mergeQsos(incoming){
     if(!o||!o.station&&!o.freq){skipped++;continue;}
     if(have.has(qsoKey(o))){skipped++;continue;}
     have.add(qsoKey(o));
-    LOG.push({date:String(o.date||""),time:String(o.time||""),freq:String(o.freq||""),
+    const entry={date:String(o.date||""),time:String(o.time||""),freq:String(o.freq||""),
       mode:String(o.mode||""),station:String(o.station||""),rst_sent:String(o.rst_sent||""),
       rst_rcvd:String(o.rst_rcvd||""),ref:String(o.ref||""),notes:String(o.notes||""),
-      created:o.created&&!LOG.some(e=>e.created===o.created)?o.created:++created});
+      created:o.created&&!LOG.some(e=>e.created===o.created)?o.created:++created};
+    if(isFinite(+o.lat)&&isFinite(+o.lng)){entry.lat=+o.lat;entry.lng=+o.lng;}
+    LOG.push(entry);
     added++;}
   return{added,skipped};}
 /* Minimal ADIF reader: walks <FIELD:len>value tags per record. Handles the
@@ -932,8 +1051,9 @@ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catc
 /* ============ navigation ============ */
 function showTab(name){
   document.querySelectorAll(".bnav-btn[data-tab],.snav-btn[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
-  ["spots","log","tools"].forEach(t=>document.getElementById("tab-"+t).hidden=(t!==name));
+  ["spots","log","map","tools"].forEach(t=>document.getElementById("tab-"+t).hidden=(t!==name));
   if(name==="spots")openSpots();
+  if(name==="map")renderMap();
 }
 
 /* ============ wire up ============ */
