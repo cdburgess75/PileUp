@@ -1,8 +1,15 @@
 # Changelog
 
-Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
-match the `VERSION` constant in `index.html`, the service-worker cache name,
-and the README badge (enforced by the test suite).
+Notable changes to PileUp. Version numbers follow `YYYY.MM.DD.N` (N = Nth
+release that day) and always match the `VERSION` constant in `index.html`,
+the service-worker cache name, and the README badge (enforced by the test
+suite). Releases before 2026.07.15.5 used a trailing letter instead of `.N`.
+
+## 2026.07.15.5
+
+**Changed**
+- Version scheme: numeric day-release counter (`2026.07.15.5`) replaces the
+  trailing letter (`2026.07.15d`)
 
 ## 2026.07.15d
 
