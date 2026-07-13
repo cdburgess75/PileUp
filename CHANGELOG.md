@@ -4,6 +4,17 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.14d
+
+**Fixed**
+- Band pills disappeared from spot rows on common phone widths (e.g. 393 px
+  iPhones): column shedding now measures the actual list against the actual
+  width instead of using a fixed breakpoint, so pills only hide when a long
+  callsign genuinely leaves no room. Re-evaluates on rotation/resize
+- Light theme: unselected band chips were neon-on-white and hard to read
+  (17 m / 20 m especially); their text and borders now darken toward ink
+  for proper contrast
+
 ## 2026.07.14c
 
 **Fixed**
