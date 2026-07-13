@@ -4,6 +4,16 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.13b
+
+**Added**
+- Map tab: an azimuthal "QTH radar" centered on your station — live spots as
+  hollow amber circles and logged contacts as green dots, placed by true
+  bearing and log-scaled distance, with range rings and tap-for-details.
+  Works fully offline; no map tiles needed
+- Logging from a spot now captures the activation's coordinates, so new
+  contacts appear on the map (backup/restore and edits preserve them)
+
 ## 2026.07.13a
 
 **Added**
