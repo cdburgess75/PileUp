@@ -4,6 +4,13 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.15d
+
+**Changed**
+- Theme toggle is now a bare sun/moon glyph pinned to the header's top-right
+  corner — no circle ring, and it no longer wraps onto its own line, making
+  the header a full row shorter
+
 ## 2026.07.15c
 
 **Changed**

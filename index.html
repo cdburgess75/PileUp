@@ -84,7 +84,11 @@
     transition:.15s;white-space:nowrap;}
   .tgl-btn:hover{color:var(--ink);}
   .tgl-btn.on{color:var(--amber);border-color:var(--amber-dim);}
-  #themeToggle{font-size:14px;line-height:1;padding:3px 9px;color:var(--amber);border-color:var(--amber-dim);border-radius:50%;}
+  /* Bare glyph pinned to the header's top-right, level with the wordmark —
+     no border ring, and it no longer wraps onto its own line. */
+  #themeToggle{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;
+    font-size:18px;line-height:1;padding:6px 8px;color:var(--amber);
+    border:none;background:none;border-radius:0;}
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
   .clock{display:flex;flex-direction:column;gap:1px;}
   .clock .lbl{font-size:8.5px;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;}
@@ -367,7 +371,7 @@
         <span class="hdrver" id="hdrVer"></span>
       </div>
       <span class="sub">POTA · SOTA Operating Log</span>
-      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme" style="margin-left:auto">☀</button>
+      <button class="tgl-btn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme">☀</button>
     </div>
     <div class="ident">
       <span id="hdrCall" class="ident-call"></span>
@@ -562,7 +566,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15c";
+const VERSION="2026.07.15d";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
