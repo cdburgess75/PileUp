@@ -4,6 +4,14 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.14e
+
+**Fixed**
+- Band pills now stay visible in collapsed rows even when a long portable
+  call (e.g. IS0/IU2UEQ/P) tightens the layout: the row goes denser instead
+  of dropping the pill — the MHz unit hides, the pill slims to its number
+  ("20" instead of "20 m"), and only the mode badge ever yields
+
 ## 2026.07.14d
 
 **Fixed**
