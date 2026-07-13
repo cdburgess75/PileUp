@@ -219,6 +219,10 @@
   .card h3{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--amber);text-transform:uppercase;}
 
   #mapSvg svg{display:block;width:100%;height:auto;}
+  .mapland{fill:#1b1b1b;stroke:#373737;stroke-width:.7;}
+  [data-theme="light"] .mapland{fill:#dfe6ee;stroke:#b9c4d2;}
+  .mapgrat{fill:none;stroke:var(--line);stroke-width:.6;stroke-dasharray:3 5;opacity:.7;}
+  .mhit{fill:transparent;cursor:pointer;}
   .mapring{fill:none;stroke:var(--line);stroke-width:1;}
   .mapaxis{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4;}
   .maplbl{fill:var(--ink-dim);font-family:var(--mono);font-size:9px;letter-spacing:.1em;}
@@ -368,7 +372,11 @@
 
   <!-- ============ MAP ============ -->
   <section id="tab-map" hidden>
-    <div class="chips" id="mapChips">
+    <div class="chips" id="mapViewChips">
+      <span class="chip on" data-mv="world">◐ World</span>
+      <span class="chip" data-mv="radar">⊚ Radar</span>
+    </div>
+    <div class="chips" id="mapChips" style="margin-top:-5px">
       <span class="chip on" data-ml="both">All</span>
       <span class="chip" data-ml="spots">Live spots</span>
       <span class="chip" data-ml="log">Logged</span>
@@ -382,9 +390,10 @@
       </div>
       <div class="hint" id="mapInfo" style="min-height:16px;margin-top:6px;text-align:center"></div>
     </div>
-    <div class="hint" style="margin-top:2px">Azimuthal view from your station — bearing is the
-      direction to point your antenna. Logged contacts appear here once saved from a spot
-      (coordinates are captured automatically from now on).</div>
+    <div class="hint" style="margin-top:2px"><b>World</b> plots everything geographically.
+      <b>Radar</b> is the azimuthal view from your station — bearing is the direction to
+      point your antenna. Logged contacts appear once saved from a spot (coordinates are
+      captured automatically).</div>
   </section>
 
   <!-- ============ TOOLS ============ -->
@@ -498,7 +507,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.13c";
+const VERSION="2026.07.13d";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -513,6 +522,12 @@ const BAND_COLOR={
   "30 m":"#88ff00","20 m":"#00ff88","17 m":"#00ffdd","15 m":"#00aaff",
   "12 m":"#4466ff","10 m":"#aa33ff","6 m":"#ff22cc","2 m":"#ff0066"
 };
+
+/* World land outline: Natural Earth 110m (public domain) via world-atlas,
+   simplified to ~2000 points and pre-projected to an equirectangular
+   720x360 grid (2px per degree) at build time. Regenerate with the
+   geo build script if the source data ever changes. */
+const WORLD_PATH="M241 340l-1 2l-13 -1l9 0l3 -2zM42 339l-7 0l-2 -2l1 -1l6 1zM270 336l3 2l0 2l-3 1l-7 1l-9 0l-2 -1l0 -1l4 0l7 -4zM118 327l5 0l-2 1l-4 0l-2 -1zM109 327l3 1l-7 -1l2 -1zM162 324l6 1l-12 0l-1 -1l2 -1zM223 322l0 2l-3 1l-10 -1l0 -1l6 -1l2 -4l3 1zM0 349l2 -1l3 1l2 -1l4 1l12 -1l21 3l30 -1l0 -1l-14 0l-7 -2l2 -2l-1 -1l-8 -2l13 1l8 -2l-3 -2l-19 -2l-2 -3l14 1l11 -2l-1 -2l3 -1l4 1l11 -2l36 0l11 -2l2 2l6 1l16 0l3 1l1 -1l-7 -3l0 -2l1 1l10 0l1 1l10 -1l5 1l2 -2l15 3l2 -2l9 2l16 -2l2 -2l-3 -4l2 -3l0 -3l9 -5l8 -2l4 0l-1 1l-8 1l-2 1l0 2l1 0l-7 3l0 2l5 1l1 3l2 1l0 2l2 2l-3 3l-3 0l-2 2l-11 1l-1 1l-13 0l0 1l7 2l-6 0l-3 1l0 1l5 3l24 2l10 3l17 -3l14 1l29 -3l-2 -2l-12 0l-1 -1l1 -2l9 -1l4 -2l16 -1l9 -2l2 -1l0 -1l-2 0l2 -2l6 -1l3 -2l7 0l1 -1l3 1l7 -1l6 1l12 -3l5 0l3 2l3 -2l5 1l2 -1l24 1l10 -2l2 -2l6 1l3 2l7 -3l18 -3l2 -2l10 0l3 3l21 1l1 3l-3 2l2 0l-2 3l4 1l8 -5l7 -1l2 -2l9 -3l2 1l1 -1l6 0l1 -2l2 2l12 0l2 1l1 -1l8 0l5 -3l6 3l17 -2l11 3l5 -2l11 0l2 1l1 -1l9 0l3 -2l2 3l19 0l1 2l5 1l7 1l4 -1l14 4l19 2l-3 4l-7 2l-5 3l0 2l2 2l5 2l-10 0l-4 4l19 6l18 1zM224 288l6 1l-8 2l-7 -2l-4 -3l7 2l1 -2l4 -1zM243 282l2 1l-1 1l-5 1l-1 -1zM501 279l-4 1l1 -3l3 1zM651 262l6 0l-1 4l-4 1l-3 -5l0 -1zM706 262l0 1l2 -1l0 2l-3 3l1 1l-3 0l-3 5l-7 -1l1 -2l7 -4l3 -4l2 -1zM709 252l5 4l3 -1l0 2l-3 1l-2 5l-3 0l1 -2l-2 -2l1 -1l0 -5l-4 -4zM0 213M719 214l-2 0l0 -1l2 0M0 212zM460 207l1 4l-1 1l-1 -1l1 3l-1 0l-4 14l-1 2l-4 1l-2 -1l-1 -3l0 -4l2 -3l-1 -2l1 -6l4 0l3 -5l1 1l1 -4zM647 208l1 1l1 -1l2 2l1 7l6 4l-1 0l2 2l0 2l1 -1l6 7l1 5l-1 7l-3 3l-4 10l-4 0l-2 2l-3 -1l0 -1l-3 2l-4 -1l-3 -2l0 -2l-2 -2l-2 0l1 -1l-1 -1l-2 2l2 -5l-4 4l-4 -4l1 -1l-6 -2l-4 0l-5 2l-2 -1l-4 2l-1 2l-7 0l-4 2l-3 0l-3 -2l2 -4l-5 -11l0 -1l1 1l-1 -2l1 2l-1 -3l1 -4l-1 -1l1 -1l0 1l5 -4l5 0l0 -1l4 -1l3 -3l1 -3l1 2l1 -1l-1 -1l1 -1l1 1l2 -5l8 2l1 -3l1 0l-1 -1l2 -2l1 1l2 -1l-1 -1l1 -1l2 2l6 0l1 1l-3 5l8 5l3 0l1 -2l0 -7l1 -1l-1 0l2 -4zM601 200l0 1l-3 -2l3 0l1 1zM609 200l-2 1l0 -1l3 -3l5 0zM606 196l0 1l-6 1l1 -2l2 1zM577 194l5 -1l9 4l-2 1l-10 -3l-2 0l0 1l-6 -2l1 -2l3 0zM629 192l-1 2l0 -2l1 -1zM664 191l-4 2l-3 -2l3 0l0 -1l0 1l2 0l1 -3l2 1zM621 186l1 2l-6 -1l0 -1zM628 182l1 4l2 1l4 -4l2 0l14 6l1 2l4 2l-2 0l0 2l3 3l2 0l1 1l-1 1l3 1l-4 0l-4 -2l-2 -3l-3 -1l-4 4l-7 -3l0 1l-3 0l2 -2l0 -3l-10 -5l-1 1l-2 -2l4 -1l-7 -3l3 -1zM610 177l-3 3l-2 -1l-5 1l2 3l5 -2l0 1l-4 2l2 2l1 5l-2 0l1 -2l-2 1l-1 -5l-1 1l0 5l-2 0l-1 -7l2 -5l2 -2l1 1zM617 178l-1 1l1 3l-1 0l-1 -1l0 -5zM572 192l-3 0l-6 -6l-6 -10l-2 -1l-4 -6l6 2l4 5l4 1l3 3l-1 1l5 5zM596 176l2 2l-2 0l-1 4l-2 1l-1 5l0 -1l-2 1l-3 -2l-3 1l-4 -1l0 -3l-2 -2l0 -4l1 -1l2 1l3 -3l2 0l7 -8l5 3l-3 5zM613 163l0 3l-1 1l0 -2l-1 1l0 3l-3 -1l-1 -4l0 1l-3 1l2 -3l2 1l3 -2l0 -2zM522 168l-3 -4l1 -4l2 1l2 4zM608 159l-2 3l-1 -1l1 -3l1 1l1 -1zM597 161l-3 2l3 -2l2 -4l0 2zM604 156l2 1l-1 2l-1 0zM611 156l1 2l-2 -1l1 2l-1 1l-1 -5zM603 143l2 1l-1 0l1 3l-2 1l0 3l5 1l0 3l-2 -2l-1 1l-1 -2l-2 1l-1 -1l1 -1l-2 -1l1 -7zM206 144l0 1l-3 -1l1 -1l2 0l2 1zM215 140l7 1l-1 1l2 2l-1 -1l-2 0l0 1l-2 -1l-1 2l0 -1l-5 0l-1 -1l4 0l-2 -2zM581 143l-2 1l-2 -1l0 -2l5 -1zM49 142l-1 0l0 -3l0 1l2 0l0 2zM201 134l0 1l3 0l5 4l3 0l-1 1l-7 0l2 -1l-2 0l-1 -2l-3 -1l-4 0l0 -1l-6 1l2 -2zM205 132l-1 1l0 -2l-1 0l1 -1zM602 134l-1 2l-1 -3l3 -4l1 2zM629 112l1 0l-2 2l0 -1l-2 2l-1 -1l1 -2l2 -1zM407 109l5 0l-1 1l2 -1l-1 1zM391 104l-1 3l-5 -2l0 -1zM378 98l2 1l-1 3l-2 0l-1 -4zM642 106l-1 4l-7 1l-2 2l-2 -2l-8 1l2 2l-1 3l-2 1l-1 -1l1 -2l-2 -2l2 0l4 -4l6 0l2 -4l2 1l4 -2l2 -6l2 -1l1 3zM379 96l-1 1l-1 -2l2 -1zM648 92l3 -1l0 2l-5 3l-3 -1l-1 2l-2 0l0 -2l1 -2l2 0l1 -4zM233 87l3 0l-1 1l-4 -1l1 -1zM113 83l-5 -1l-2 -2l-2 0l-1 -2l5 1zM248 79l-2 1l3 0l-1 1l3 0l2 1l-1 1l2 0l1 2l-1 2l-2 -1l0 -2l-3 2l-1 0l1 -1l-8 0l6 -8l2 0zM95 72l2 0l-1 2l2 2l-4 -3zM647 79l2 3l-3 -1l-1 3l2 2l0 2l-2 -1l-1 1l-1 -15l2 -2l2 4l-1 1zM346 75l-3 2l-3 -1l2 -2l-1 -2l4 -2l4 1l-1 3zM385 69l-1 1l-2 -2l3 0zM54 66l-2 1l-1 -2l4 -1l1 1zM354 63l-2 2l4 0l-2 3l2 0l7 7l-1 1l1 1l-10 3l-2 -1l-3 1l5 -3l-3 0l-1 -1l3 -1l-2 -1l4 -1l-1 -2l-3 -1l1 -1l-1 -1l-1 1l-1 -5zM29 60l-4 0l2 -1l2 0zM196 55l-4 1l2 -2l2 0zM17 52l1 1l5 0l-4 1l0 -1l-3 0zM190 49l0 1l1 -1l9 4l-5 0l-1 -1l-5 2l-3 -1l2 -4zM331 47l2 3l-9 3l-10 -1l2 -1l-4 -1l4 0l0 -1l-5 0l2 -2l3 0l3 2l3 -2l2 1zM208 46l-2 0l0 -2l2 -1l2 1zM0 42l10 4l0 1l1 -1l5 0l4 2l-5 1l0 2l-4 0l-3 -1l0 -1l-8 -1l1 1l-1 1M720 50l-5 1l4 4l-10 1l-8 3l0 1l-3 -1l-8 2l-3 -1l-3 4l2 1l0 3l-2 0l-1 1l1 1l-3 1l-1 3l-3 0l-3 4l-3 -9l1 -3l2 -2l3 0l3 -3l7 -3l2 -3l-2 0l-7 4l-1 -3l-6 1l-5 3l2 2l-7 0l0 -1l-19 1l-14 9l4 1l4 -1l5 3l0 2l-2 2l-1 5l-6 7l-4 3l-3 1l-2 -1l-3 3l-1 -1l-4 5l-2 0l0 2l4 4l0 3l-6 2l-1 -4l2 -1l-5 -2l2 -3l-2 0l0 -1l-7 2l2 -3l-1 -1l-7 4l-1 1l3 1l1 2l3 -2l3 1l0 1l-7 4l2 1l4 6l-1 7l-8 9l-7 3l0 -1l-6 2l-1 2l-2 -1l1 -1l-4 0l-4 3l-1 2l7 7l1 4l-1 4l-4 2l-1 2l-3 2l0 -3l-8 -5l0 -2l-2 0l-2 9l2 0l1 3l6 5l1 5l-1 3l-6 -6l-1 -3l1 -1l-5 -5l2 -6l-4 -11l-3 3l-3 -1l1 -4l-5 -6l-1 -4l-2 0l0 2l-7 1l-1 3l-3 1l-6 6l-3 1l-1 2l1 4l-1 5l-5 5l-2 -2l-6 -14l-2 -11l-4 1l-3 -2l1 -2l-3 -1l-3 -4l-4 1l-14 -1l-1 -3l-5 1l-6 -3l-3 -4l-2 -1l-2 1l4 7l0 2l2 1l-1 -1l2 -1l0 4l1 -1l0 1l4 0l5 -5l1 5l6 3l-4 4l-1 2l1 1l-5 2l0 2l-6 1l-3 3l-7 3l-4 0l-1 2l-3 0l-1 -1l1 -2l-2 -2l1 -3l-8 -10l0 -2l-5 -8l-4 -3l1 -3l-2 4l-3 -5l0 3l5 7l1 4l3 2l1 7l12 12l-2 2l2 0l1 2l3 0l11 -3l0 3l-7 13l-9 7l-2 4l-6 6l-1 3l2 2l-1 3l3 4l0 7l1 1l-3 4l-9 6l-1 2l2 3l0 4l-6 3l1 1l-1 5l-9 9l-4 1l0 1l-7 0l-6 2l-3 -2l1 -1l-1 -4l-7 -12l0 -7l-6 -9l2 -9l2 -1l0 -4l-1 -1l0 -5l-2 -2l1 -1l-1 0l0 -2l-6 -8l2 -8l-3 -4l-4 2l-4 -5l-4 0l-9 4l-2 -1l-10 1l-6 -3l-4 -4l0 -2l-8 -8l1 -1l-2 -2l2 -2l1 -5l-2 -8l4 -5l1 -4l4 -3l2 0l4 -4l-1 -2l1 -3l4 -2l3 -3l0 -2l8 2l5 -3l5 -1l5 1l8 -2l1 2l2 -1l-1 1l1 3l-2 1l3 3l7 1l3 3l6 1l1 -3l3 -2l3 1l0 1l4 0l0 1l19 1l3 -7l0 -4l-3 -1l-1 2l-13 -1l-2 -3l1 -2l-2 -1l3 -2l12 -3l14 2l2 -1l0 -2l-6 -4l-4 -1l5 -5l-4 2l-4 0l0 2l3 0l0 1l-5 1l-3 -2l2 -1l-6 -1l-6 8l3 3l-3 0l-2 2l-1 -2l-5 1l2 1l-4 -1l3 5l0 1l-2 -1l1 1l-2 2l-2 -1l-3 -5l-2 -6l-8 -3l1 -1l-4 -1l1 -1l-3 0l0 3l5 4l7 3l0 1l-3 -1l-1 1l1 2l-2 2l-1 0l1 -2l-1 -2l-7 -3l-6 -6l-5 3l-4 -1l-3 1l0 2l-7 5l1 2l-4 4l-8 1l-1 -2l-5 0l1 -1l-2 -2l1 -3l0 -5l-1 -1l15 -1l2 -5l-7 -4l0 -1l2 -1l4 1l-1 -3l2 1l5 -1l0 -2l5 -1l1 -3l9 -2l-2 -3l1 -3l4 -1l0 2l1 0l-3 2l3 3l3 -1l5 1l5 -2l4 1l4 -1l-1 -2l1 -3l2 -1l3 2l1 -3l-2 0l0 -1l11 -2l-2 -1l-7 1l-6 -1l-1 -4l3 -3l6 -2l0 -1l-3 -1l-4 1l-2 1l1 1l-9 6l4 3l-4 3l-2 5l-6 1l-5 -8l-7 3l-3 -1l-1 -7l11 -5l9 -7l8 -4l5 -1l3 1l3 -2l14 1l-3 1l2 1l2 -1l17 4l1 2l-5 2l-9 -2l-2 1l4 1l0 3l4 1l-1 -2l6 1l2 -1l-1 -1l4 -2l4 1l1 -2l-2 -1l1 -1l-1 -1l6 1l1 1l-3 0l2 2l3 -1l0 -1l11 -3l2 0l-2 2l11 -2l2 1l2 -1l-2 -1l1 -1l16 4l1 -1l-2 -2l-2 0l1 -1l-2 -2l4 -2l1 -2l7 0l1 2l-2 1l2 2l-1 3l2 1l-4 4l2 1l5 -4l-1 -1l1 -1l-3 -1l2 -2l-3 -2l4 -1l-1 -2l4 4l-1 -2l3 -1l4 0l4 2l-2 -2l0 -2l13 -1l-2 -1l2 -1l12 -2l16 -1l2 -2l8 0l-3 1l5 0l0 1l14 1l-2 2l-7 2l7 0l1 1l4 -1l7 1l0 1l16 -1l3 1l1 1l-1 1l2 2l4 0l2 -2l15 1l-2 -2l3 -1l18 2l7 2l12 0l2 1l-1 2l17 0l3 2l3 -1l-2 -1l1 -1l16 1zM458 97l1 2l2 0l-2 1l-1 5l7 2l3 -1l-1 -2l1 -2l-2 -1l1 -1l-2 0l1 -2l2 1l1 -1l-2 -2l-1 0l0 2l-1 -4l-2 0l-2 -3l5 -2l0 -3l-8 1l-5 4zM0 37l5 0l0 1l-5 0zM179 41l0 2l3 -2l3 5l4 -4l0 -2l3 0l6 3l-2 1l1 2l-9 1l-5 5l-3 0l-2 2l-2 0l-5 6l0 2l3 0l1 4l3 -1l10 4l7 1l2 6l3 2l3 -3l-1 -3l-2 -1l4 -1l3 -3l-4 -5l2 -2l-1 -5l7 1l1 -1l5 2l0 1l4 0l0 4l2 0l2 2l6 -5l6 7l-1 1l5 3l3 0l4 3l1 3l-7 2l-2 2l-11 -1l-11 7l5 -3l7 -1l2 1l-2 1l1 4l3 1l5 -3l1 2l-11 5l-1 0l0 -2l3 -2l-3 0l-10 5l2 3l-5 0l-2 1l3 0l-3 1l-1 -1l-1 1l1 0l0 2l-2 1l-1 -1l1 2l-2 3l1 -2l-2 -2l0 2l-1 0l1 0l2 5l-6 3l-1 2l-5 3l0 3l3 6l-1 4l-2 -1l-4 -9l-4 1l-2 -2l-5 0l-1 3l-1 -1l0 1l-2 0l-4 -2l-7 3l-2 2l0 3l1 0l-2 6l3 7l4 3l5 -1l3 -3l0 -2l7 -1l-1 5l-2 1l1 0l-1 2l1 1l-2 2l1 1l0 -1l1 1l0 -1l9 1l1 1l-1 1l1 0l-2 7l4 4l7 -1l3 2l3 -2l1 -3l2 -1l1 1l3 -3l2 1l-2 1l1 5l1 -2l-1 0l0 -2l3 -1l-1 -1l5 2l0 1l5 1l7 -1l-1 1l2 0l2 3l3 1l4 4l8 1l6 8l-1 3l4 0l0 2l1 -1l6 2l1 2l12 2l3 3l3 0l2 5l-1 3l-8 10l0 6l-4 10l-2 2l-9 2l-4 4l0 4l-4 6l-2 2l-2 0l0 2l-3 3l-4 1l-5 -2l3 3l-1 1l2 1l-2 3l-10 2l1 1l-1 3l-5 0l0 2l3 1l-3 2l-1 3l-4 1l0 2l4 1l-7 7l0 3l2 1l-4 0l-2 1l0 2l-8 -3l-1 -8l3 -3l-3 -1l2 -1l0 -4l3 1l1 -4l-2 -1l0 3l-2 -1l3 -7l-1 -5l1 0l3 -9l0 -7l2 -7l1 -11l-3 -5l-10 -7l-5 -11l-5 -5l1 -1l-1 -2l3 -4l0 -1l-1 1l-1 -1l0 -2l1 0l1 -4l6 -6l-1 0l0 -5l-2 -3l1 -1l-3 -1l-2 1l1 2l-2 1l0 -2l0 1l-3 -2l-1 1l-3 -4l-1 1l-2 -1l1 -2l-4 -5l-2 1l-6 -2l-5 -4l-5 1l-15 -6l-3 -3l0 -5l-8 -6l0 -2l-2 -1l0 -2l-3 -1l-2 -5l-4 -2l1 4l10 13l-1 1l-4 -3l0 -2l-3 -3l0 1l-3 -2l2 -2l-4 -3l-2 -5l-3 -3l-4 -1l-8 -12l1 -1l-1 -15l3 1l1 2l-1 -4l-9 -4l-1 -3l-5 -5l-3 -1l0 -2l-3 -1l-1 -2l-5 0l-7 -3l-14 -3l-2 2l-7 2l-1 -1l3 -4l-7 4l1 1l-1 2l-5 1l0 1l-6 3l-11 2l15 -6l1 -3l-10 1l-1 -3l-6 -1l-1 -2l3 -3l6 -1l1 -3l-11 1l-3 -2l7 -2l2 0l-1 1l5 0l-11 -5l8 -2l2 -2l11 -2l4 2l5 -1l-1 1l21 1l9 2l18 -2l1 -1l4 2l9 -1l13 2l2 1l-3 1l4 1l5 -1l4 1l2 -1l-2 -1l6 -1l3 2l6 1l6 -1l0 -1l5 1l0 1l3 -1l1 -2l-5 -2l0 -2l3 -2l4 1l3 3l-2 1zM132 34l-1 1l9 -1l4 3l1 -1l-2 -2l4 0l4 4l7 2l0 1l-3 0l1 1l-20 1l-3 0l-3 -2l-2 1l-3 -2l10 -1l-11 0l-1 -1l5 -1l-7 0l2 -2l7 -2zM207 34l-6 1l-3 -2l1 -1zM187 34l1 1l2 -2l5 -1l4 3l-1 1l6 -2l8 2l0 1l4 0l8 3l2 2l-4 1l14 3l0 2l-4 2l-5 -3l-3 0l0 2l7 4l-1 2l-8 -2l6 3l-18 -5l-5 1l-2 -1l1 -2l8 0l-1 -1l4 -3l-9 -3l2 0l-3 -2l-8 1l-17 -3l1 -4l7 -2zM159 32l3 1l3 -1l1 1l-2 1l3 1l0 2l-7 0l-5 -2l0 -1l4 1l-2 -2zM647 34l-7 -1l4 -1l3 1zM174 34l-5 2l-1 -3l1 -1l10 0zM119 37l-5 1l-6 -2l4 -3l-2 -2l7 0l12 2l-10 3zM661 30l-2 1l-7 -1l1 -1zM173 30l-1 1l-6 -1l1 -1l5 0zM650 29l-1 1l-11 1l-4 -2l1 -1zM163 27l2 0l-1 3l-9 -1l0 -2zM144 28l4 0l1 1l-2 1l-11 1l-4 0l4 -1l-11 0l4 -3l13 2l-3 -2l2 -1zM475 39l-12 -2l0 -1l2 0l0 -2l4 -1l-2 -1l15 -5l10 -1l6 1l-15 2l-6 2l-6 4l0 2zM171 26l6 0l2 1l-1 1l4 1l12 -1l6 1l0 1l-1 1l-19 0l-5 -1l-3 -3l-6 -1zM128 25l-2 2l-12 1l8 -3zM140 25l-7 0l2 -1l5 0zM409 24l-8 1l2 -1l-1 -1zM168 24l-4 0l-1 -2l6 1zM160 23l1 1l-11 -1l2 0l-3 -1l0 -1zM397 21l6 1l-5 1l-4 3l-6 -1l-7 -4l5 -1l1 1l4 -1zM411 19l4 1l-3 1l-12 0l0 -1l-5 -1zM462 19l-4 0l0 1l-8 -1l4 -1zM560 22l-10 0l-8 -3l10 -2l8 3zM186 21l2 0l-2 1l-8 2l-6 -2l2 -1l-6 0l-1 -1l2 -2l6 -1l3 2l6 0zM223 14l13 1l-11 2l4 0l-15 4l-8 0l3 1l-1 0l1 1l-5 1l-4 2l4 0l-5 2l-18 -1l0 -1l3 0l-1 -2l7 1l-6 -2l6 -2l-3 0l-1 -2l6 1l4 -1l-11 0l-8 -2l0 -1l17 -1l1 -1zM306 13l12 2l-22 1l18 0l2 1l-2 1l14 -2l8 1l-16 3l5 0l-4 2l0 3l2 1l-6 1l3 1l1 2l-2 0l2 1l-4 1l2 0l-1 1l-5 0l2 3l-5 -1l6 2l0 2l-3 0l-4 -2l1 1l-3 2l8 0l-10 3l-9 1l-4 3l-12 2l-1 3l-5 3l1 1l-2 4l-10 -2l-6 -5l-4 -5l0 -2l-1 0l2 -3l3 0l1 -3l-7 1l-1 -2l1 -1l6 1l-5 -2l-4 0l3 -2l-8 -6l-20 -1l-6 -2l9 -1l-13 -1l16 -3l0 -1l-5 0l12 -3l-1 -1l24 -1l12 2l-5 -1l0 -1l7 -1z";
 
 /* ============ state & persistence ============ */
 const K={prefs:"pileup_prefs_v1",log:"pileup_log_v1",geo:"pileup_geo_v1",
@@ -924,12 +939,14 @@ document.getElementById("statsBtn").addEventListener("click",()=>{
   card.hidden=!card.hidden;btn.classList.toggle("on",!card.hidden);
   renderStats();});
 
-/* ============ map (azimuthal QTH radar) ============ */
-/* No geographic tiles — the CSP forbids external hosts and field coverage is
-   unreliable anyway. Instead: an azimuthal plot centered on the operator.
-   Angle = true bearing (what you'd turn a beam antenna to), radius = distance
-   on a log scale so 300 km and 12000 km both stay readable. */
-let mapLayer="both";
+/* ============ map ============ */
+/* Two views, both fully offline (the CSP forbids tile servers):
+   - World: equirectangular map drawn from the embedded WORLD_PATH outline,
+     markers placed by lat/lng.
+   - Radar: azimuthal plot centered on the operator — angle is true bearing
+     (what you'd turn a beam antenna to), radius is log-scaled distance so
+     300 km and 12000 km both stay readable. */
+let mapLayer="both",mapView=PREFS.mapView||"world";
 const MAP_RINGS=[100,1000,10000];      // km, labeled
 const MAP_MAX_KM=20000;                // half the planet ≈ outer edge
 function mapR(km){const rmax=178;
@@ -944,9 +961,28 @@ function mapPoints(){
     if(isFinite(o.lat)&&isFinite(o.lng))
       pts.push({kind:"log",call:o.station,ref:o.ref,lat:o.lat,lng:o.lng,date:o.date});
   return pts;}
+function dotLabel(p,km){
+  return(p.call||"?")+(p.ref?" · "+p.ref:"")+" · "+Math.round(km)+" km · "+
+    Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng))+"°"+(p.date?" · "+p.date:"");}
+function renderWorld(el,pts){
+  const X=lng=>(lng+180)*2,Y=lat=>(90-lat)*2;
+  let svg='<svg viewBox="0 0 720 360" role="img" aria-label="World map of spots and logged contacts">';
+  svg+='<path class="mapland" d="'+WORLD_PATH+'"/>';
+  svg+='<line class="mapgrat" x1="0" y1="180" x2="720" y2="180"/>';   // equator
+  for(const p of pts){
+    const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng),label=dotLabel(p,km);
+    const x=X(p.lng).toFixed(1),y=Y(p.lat).toFixed(1);
+    svg+='<circle class="mdot-'+p.kind+'" cx="'+x+'" cy="'+y+'" r="'+(p.kind==="log"?5.5:5)+'">'+
+      '<title>'+esc(label)+'</title></circle>'+
+      '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x+'" cy="'+y+'" r="13"/>';}
+  const qx=X(GEO.lng).toFixed(1),qy=Y(GEO.lat).toFixed(1);
+  svg+='<circle class="mqth-pulse" cx="'+qx+'" cy="'+qy+'" r="10"/>'+
+       '<circle class="mdot-qth" cx="'+qx+'" cy="'+qy+'" r="4.5"/></svg>';
+  el.innerHTML=svg;}
 function renderMap(){
   const el=document.getElementById("mapSvg");if(!el)return;
   const C=200,pts=mapPoints();
+  if(mapView==="world"){renderWorld(el,pts);renderMapInfo(pts);return;}
   let svg='<svg viewBox="0 0 400 400" role="img" aria-label="Azimuthal map of spots and logged contacts">';
   svg+='<line class="mapaxis" x1="200" y1="14" x2="200" y2="386"/>'+
        '<line class="mapaxis" x1="14" y1="200" x2="386" y2="200"/>';
@@ -959,19 +995,19 @@ function renderMap(){
        '<text class="maplbl" x="394" y="204" text-anchor="middle">E</text>'+
        '<text class="maplbl" x="200" y="398" text-anchor="middle">S</text>'+
        '<text class="maplbl" x="6" y="204" text-anchor="middle">W</text>';
-  let i=0;
   for(const p of pts){
     const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng);
     const br=bearing(GEO.lat,GEO.lng,p.lat,p.lng)*Math.PI/180;
-    const r=mapR(km),x=C+r*Math.sin(br),y=C-r*Math.cos(br);
-    const label=(p.call||"?")+(p.ref?" · "+p.ref:"")+" · "+Math.round(km)+" km · "+
-      Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng))+"°"+(p.date?" · "+p.date:"");
-    svg+='<circle class="mdot-'+p.kind+'" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+
-      '" cy="'+y.toFixed(1)+'" r="'+(p.kind==="log"?4.5:4)+'"><title>'+esc(label)+'</title></circle>';
-    i++;}
+    const r=mapR(km),x=C+r*Math.sin(br),y=C-r*Math.cos(br),label=dotLabel(p,km);
+    svg+='<circle class="mdot-'+p.kind+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+
+      '" r="'+(p.kind==="log"?4.5:4)+'"><title>'+esc(label)+'</title></circle>'+
+      '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11"/>';}
   svg+='<circle class="mqth-pulse" cx="200" cy="200" r="8"/>'+
        '<circle class="mdot-qth" cx="200" cy="200" r="4"/></svg>';
   el.innerHTML=svg;
+  renderMapInfo(pts);
+}
+function renderMapInfo(pts){
   const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
   document.getElementById("mapInfo").textContent=
     pts.length?(mapLayer==="log"?n+" logged contacts plotted":
@@ -984,6 +1020,12 @@ document.getElementById("mapChips").addEventListener("click",ev=>{
   mapLayer=c.dataset.ml;
   document.querySelectorAll("#mapChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderMap();});
+document.getElementById("mapViewChips").addEventListener("click",ev=>{
+  const c=ev.target.closest("[data-mv]");if(!c)return;
+  mapView=c.dataset.mv;PREFS.mapView=mapView;saveJSON(K.prefs,PREFS);
+  document.querySelectorAll("#mapViewChips .chip").forEach(x=>x.classList.toggle("on",x===c));
+  renderMap();});
+document.querySelectorAll("#mapViewChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.mv===mapView));
 document.getElementById("mapSvg").addEventListener("click",ev=>{
   const d=ev.target.closest("[data-mi]");if(!d)return;
   document.getElementById("mapInfo").textContent=d.dataset.mi;});
