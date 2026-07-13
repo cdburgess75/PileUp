@@ -4,6 +4,12 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.15b
+
+**Added**
+- The running version now shows in the header next to the app title
+  (it was previously only at the bottom of the Tools tab)
+
 ## 2026.07.15a
 
 **Added**
