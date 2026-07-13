@@ -4,6 +4,18 @@ Notable changes to PileUp. Version numbers follow `YYYY.MM.DDx` and always
 match the `VERSION` constant in `index.html`, the service-worker cache name,
 and the README badge (enforced by the test suite).
 
+## 2026.07.15a
+
+**Added**
+- Map zoom: pinch to zoom and drag to pan (mouse wheel and double-tap on
+  desktop), up to 10×, with a ⟲ reset button. Markers and line weights
+  re-scale so they stay readable instead of ballooning. Page scrolling
+  still works over the map at 1×
+
+**Changed**
+- Consistent 8px breathing gap between the frequency and the callsign in
+  compact spot rows (they sat too close)
+
 ## 2026.07.14e
 
 **Fixed**

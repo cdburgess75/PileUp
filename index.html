@@ -195,7 +195,9 @@
      call in the list, so calls are never truncated and rows stay aligned. */
   .spotrow.clps{display:grid;align-items:center;gap:5px;padding:9px 8px 9px 10px;font-size:14px;
     grid-template-columns:11px 72px var(--callw,9ch) 40px 48px minmax(30px,1fr) 30px;}
-  .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;}
+  /* The frequency is right-aligned to its column edge, so this padding is the
+     constant visual gap before the callsign — identical in every row/tier. */
+  .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;padding-right:8px;}
   .spotrow.clps .freq .u{display:inline;font-size:8px;margin-left:2px;letter-spacing:.08em;}
   .spotrow.clps .st{font-size:14px;white-space:nowrap;}
   .spotrow.clps .cmode{display:flex;justify-content:flex-start;}
@@ -266,6 +268,16 @@
   .mdot-log{fill:var(--green);stroke:var(--bg);stroke-width:1;cursor:pointer;}
   .mdot-qth{fill:var(--amber);}
   .mqth-pulse{fill:none;stroke:var(--amber);stroke-width:1;opacity:.5;}
+  #mapSvg{touch-action:pan-y;}          /* page still scrolls at 1×… */
+  #mapSvg.zoomed{touch-action:none;}    /* …one finger pans the map when zoomed */
+  #mapSvg svg .mapland{stroke-width:calc(.7px/var(--zk,1));}
+  #mapSvg svg .mapgrat{stroke-width:calc(.6px/var(--zk,1));}
+  #mapSvg svg .mdot-spot{stroke-width:calc(1.6px/var(--zk,1));}
+  #mapSvg svg .mapring{stroke-width:calc(1px/var(--zk,1));}
+  .map-reset{position:absolute;top:16px;right:16px;z-index:5;background:var(--panel2);
+    border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
+    font-size:11px;font-weight:700;letter-spacing:.06em;padding:6px 10px;border-radius:8px;
+    cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4);}
   .maplegend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:9.5px;
     color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
   .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
@@ -416,8 +428,9 @@
       <span class="chip" data-ml="spots">Live spots</span>
       <span class="chip" data-ml="log">Logged</span>
     </div>
-    <div class="card" style="padding:10px">
+    <div class="card" style="padding:10px;position:relative">
       <div id="mapSvg"></div>
+      <button class="map-reset" id="mapReset" hidden aria-label="Reset zoom">⟲ 1×</button>
       <div class="maplegend">
         <span><span class="mkey mk-spot"></span> live spot</span>
         <span><span class="mkey mk-log"></span> logged QSO</span>
@@ -425,10 +438,10 @@
       </div>
       <div class="hint" id="mapInfo" style="min-height:16px;margin-top:6px;text-align:center"></div>
     </div>
-    <div class="hint" style="margin-top:2px"><b>World</b> plots everything geographically.
-      <b>Radar</b> is the azimuthal view from your station — bearing is the direction to
-      point your antenna. Logged contacts appear once saved from a spot (coordinates are
-      captured automatically).</div>
+    <div class="hint" style="margin-top:2px"><b>World</b> plots everything geographically —
+      pinch to zoom, drag to pan, double-tap to jump in. <b>Radar</b> is the azimuthal view
+      from your station — bearing is the direction to point your antenna. Logged contacts
+      appear once saved from a spot (coordinates are captured automatically).</div>
   </section>
 
   <!-- ============ TOOLS ============ -->
@@ -542,7 +555,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.14e";
+const VERSION="2026.07.15a";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -825,12 +838,13 @@ function renderSpots(){
   const maxLen=Math.max(4,...list.map(s=>String(s.call||"?").length));
   el.style.setProperty("--callw",(maxLen+0.6)+"ch");
   // Densify only when this list truly can't fit this width (14px mono ≈
-  // 8.5px/char; 261 = roomy column budget, 209 = dense-with-pill budget).
+  // 8.5px/char; 269 = roomy column budget, 217 = dense-with-pill budget —
+  // both include the 8px freq→callsign breathing gap).
   // The band pill survives every tier — only the mode badge ever yields.
   if(el.clientWidth>0){
     const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
-    el.classList.toggle("tight",261+callPx>avail);
-    el.classList.toggle("xtight",209+callPx>avail);
+    el.classList.toggle("tight",269+callPx>avail);
+    el.classList.toggle("xtight",217+callPx>avail);
   }
   el.innerHTML=list.map(spotRowHTML).join("");
 }
@@ -1049,7 +1063,7 @@ function renderWorld(el,pts){
   const qx=X(GEO.lng).toFixed(1),qy=Y(GEO.lat).toFixed(1);
   svg+='<circle class="mqth-pulse" cx="'+qx+'" cy="'+qy+'" r="10"/>'+
        '<circle class="mdot-qth" cx="'+qx+'" cy="'+qy+'" r="4.5"/></svg>';
-  el.innerHTML=svg;}
+  el.innerHTML=svg;applyMapZoom();}
 function renderMap(){
   const el=document.getElementById("mapSvg");if(!el)return;
   const C=200,pts=mapPoints();
@@ -1075,9 +1089,71 @@ function renderMap(){
       '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11"/>';}
   svg+='<circle class="mqth-pulse" cx="200" cy="200" r="8"/>'+
        '<circle class="mdot-qth" cx="200" cy="200" r="4"/></svg>';
-  el.innerHTML=svg;
+  el.innerHTML=svg;applyMapZoom();
   renderMapInfo(pts);
 }
+
+/* --- map zoom & pan: pinch, one-finger pan when zoomed, wheel, double-tap.
+   Implemented purely by moving the SVG viewBox; markers re-scale so they
+   stay finger-sized instead of ballooning. --- */
+let _mz={k:1,x:0,y:0};
+function mapBase(){return mapView==="world"?[720,360]:[400,400];}
+function applyMapZoom(){
+  const el=document.getElementById("mapSvg"),svg=el&&el.querySelector("svg");
+  if(!svg)return;
+  const[W,H]=mapBase(),k=_mz.k,w=W/k,h=H/k;
+  _mz.x=Math.min(Math.max(_mz.x,0),W-w);_mz.y=Math.min(Math.max(_mz.y,0),H-h);
+  svg.setAttribute("viewBox",_mz.x.toFixed(2)+" "+_mz.y.toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2));
+  svg.style.setProperty("--zk",k);
+  svg.querySelectorAll("circle").forEach(c=>{
+    if(!c.dataset.br)c.dataset.br=c.getAttribute("r");
+    c.setAttribute("r",(+c.dataset.br/k).toFixed(2));});
+  el.classList.toggle("zoomed",k>1.02);
+  document.getElementById("mapReset").hidden=k<=1.02;
+}
+function mapClientToSvg(cx,cy){
+  const svg=document.querySelector("#mapSvg svg"),r=svg.getBoundingClientRect();
+  const[W]=mapBase(),w=W/_mz.k;
+  return[_mz.x+(cx-r.left)*w/r.width,_mz.y+(cy-r.top)*w/r.width];}
+function mapZoomAt(px,py,factor){
+  const nk=Math.min(10,Math.max(1,_mz.k*factor));
+  _mz.x=px-(px-_mz.x)*(_mz.k/nk);_mz.y=py-(py-_mz.y)*(_mz.k/nk);
+  _mz.k=nk;applyMapZoom();}
+(function(){
+  const el=document.getElementById("mapSvg"),ptrs=new Map();
+  let lastDist=0,lastMid=null;
+  el.addEventListener("pointerdown",e=>{ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+    if(ptrs.size===2){const[a,b]=[...ptrs.values()];lastDist=Math.hypot(a[0]-b[0],a[1]-b[1]);}
+    lastMid=null;});
+  el.addEventListener("pointermove",e=>{
+    if(!ptrs.has(e.pointerId))return;
+    ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+    if(ptrs.size===2){
+      const[a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);
+      if(lastDist>0&&d>0){
+        const[mx,my]=mapClientToSvg((a[0]+b[0])/2,(a[1]+b[1])/2);
+        mapZoomAt(mx,my,d/lastDist);}
+      lastDist=d;e.preventDefault();
+    }else if(ptrs.size===1&&_mz.k>1.02){
+      const cur=[e.clientX,e.clientY];
+      if(lastMid){
+        const svg=el.querySelector("svg");if(!svg)return;
+        const r=svg.getBoundingClientRect(),[W]=mapBase(),scale=(W/_mz.k)/r.width;
+        _mz.x-=(cur[0]-lastMid[0])*scale;_mz.y-=(cur[1]-lastMid[1])*scale;
+        applyMapZoom();}
+      lastMid=cur;e.preventDefault();
+    }});
+  const up=e=>{ptrs.delete(e.pointerId);lastDist=0;lastMid=null;};
+  el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+  el.addEventListener("wheel",e=>{e.preventDefault();
+    const[px,py]=mapClientToSvg(e.clientX,e.clientY);
+    mapZoomAt(px,py,e.deltaY<0?1.2:1/1.2);},{passive:false});
+  el.addEventListener("dblclick",e=>{e.preventDefault();
+    const[px,py]=mapClientToSvg(e.clientX,e.clientY);
+    mapZoomAt(px,py,_mz.k>=8?1/_mz.k:2);});
+  document.getElementById("mapReset").addEventListener("click",()=>{
+    _mz={k:1,x:0,y:0};applyMapZoom();});
+})();
 function renderMapInfo(pts){
   const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
   document.getElementById("mapInfo").textContent=
@@ -1094,6 +1170,7 @@ document.getElementById("mapChips").addEventListener("click",ev=>{
 document.getElementById("mapViewChips").addEventListener("click",ev=>{
   const c=ev.target.closest("[data-mv]");if(!c)return;
   mapView=c.dataset.mv;PREFS.mapView=mapView;saveJSON(K.prefs,PREFS);
+  _mz={k:1,x:0,y:0};
   document.querySelectorAll("#mapViewChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderMap();});
 document.querySelectorAll("#mapViewChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.mv===mapView));
