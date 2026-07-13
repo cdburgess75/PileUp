@@ -7,6 +7,12 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.15.007
+
+**Fixed**
+- The header tagline could run into the sun/moon glyph; the brand row now
+  reserves space for it
+
 ## 2026.07.15.006
 
 **Added**

@@ -72,7 +72,9 @@
     padding-top:max(14px,env(safe-area-inset-top));
     background:var(--header-bg);border-bottom:1px solid var(--line);
     box-shadow:0 6px 18px rgba(0,0,0,.5);}
-  .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  /* Right padding reserves room for the absolutely-positioned theme glyph so
+     the tagline never runs into it. */
+  .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:42px;}
   .brand h1{font-size:17px;letter-spacing:.42em;margin:0;color:var(--amber);font-weight:700;}
   .brand .sub{font-size:9.5px;letter-spacing:.28em;color:var(--ink-dim);text-transform:uppercase;}
   .brandcol{display:flex;flex-direction:column;gap:3px;}
@@ -570,7 +572,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15.006";
+const VERSION="2026.07.15.007";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
