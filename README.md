@@ -23,7 +23,7 @@
 - [Key features](#key-features)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
-- [Usage](#usage)
+- [Using PileUp](#using-pileup)
 - [Running the tests](#running-the-tests)
 - [Contributing](#contributing)
 - [License](#license)
@@ -121,13 +121,56 @@ npx serve .            # or python3 -m http.server — any static server works
 
 Open `http://localhost:3000` (or just open `index.html` directly — the app runs from `file://` too, minus the service worker).
 
-## Usage
+## Using PileUp
 
-1. **Set up your station** — Tools tab → enter your callsign, then tap **◉ Use GPS** (or type coordinates). Your Maidenhead grid is derived automatically and enables distance/bearing on every spot.
-2. **Chase** — Spots tab → pick POTA or SOTA, narrow with band/mode chips or the search box. Fresh spots are bright; stale ones dim after 45 minutes.
-3. **Log** — tap a spot, hit **＋ log**, add signal reports, save. Already-worked callsigns show struck through with a green ✓ until the UTC day rolls over.
-4. **Search your log** — Log tab search matches callsign, reference, mode, date, notes, or band (`cw 20m` finds CW contacts on 14 MHz).
-5. **Export** — Log tab → **Export CSV** for spreadsheets, **Export ADIF** for LoTW/QRZ/award submissions.
+The app has four tabs along the bottom: **Spots**, **Log**, **Map**, and **Tools**. The version you're running is shown under the **PILEUP** title, and an update banner slides up from the bottom whenever a new version is deployed — tap **⬆ Update** to apply it.
+
+### First run — set up your station (Tools tab)
+
+Do this once so distances, bearings, and your grid square work everywhere.
+
+1. Open **Tools** → **◆ My station**.
+2. Enter your **callsign**.
+3. Tap **◉ Use GPS** to fill your coordinates automatically, or type latitude/longitude by hand.
+4. Tap **Save**. Your Maidenhead grid (e.g. `FN42li`) appears in the header, and every spot now shows its distance and bearing from you.
+
+Also on the Tools tab: dark/light theme (the ☀/☾ in the header toggles it too), font size, 12/24-hour clock, **Kiosk mode** (fullscreen with screen-wake for a shack dashboard), and the **Backup & restore** card (see below).
+
+### Spots tab — find and log activations
+
+- **Pick a program:** **POTA · Parks** or **SOTA · Summits** at the top.
+- **Rows are collapsed by default** to one line — frequency, callsign, mode, band, park/summit reference, and age. **Tap a row to expand it** for the full detail (park name, distance, bearing, comments); tap again to collapse.
+- **To log a contact, tap the ＋ button** — on the collapsed row or inside the expanded card. The QSO form opens pre-filled with frequency, callsign, mode, and reference; add your signal reports and **Save**.
+- **Narrow the list:** mode chips (CW / Phone / Data), the colored **band chips**, or the **search box** (matches callsign, reference, name, state, mode).
+- **Sort** by frequency or age with the button next to the search box.
+- **Worked indicator:** any station you've already logged today (UTC) shows **struck through with a green ✓** until 0000 UTC, so you don't work a dupe. The app also warns you if you try.
+- The list **auto-refreshes every 60 seconds**; the ⟳ button forces a refresh. Spots older than 45 minutes dim.
+
+### Log tab — your QSO logbook
+
+- **Filter by program:** the **All / POTA / SOTA / Other** switch at the top. "Other" is any contact without a park or summit reference — ragchews, nets, DX.
+- **Search** across callsign, reference, mode, date, notes, frequency, and band — multiple terms narrow further (`cw 20m` = CW contacts on 20 m). It combines with the program filter.
+- **Add a contact by hand** with **+ New entry**; **edit** or **delete** any entry from its row.
+- **▤ Stats** opens a live dashboard: total QSOs, unique callsigns, unique references, active days, plus bars by band and counts by mode.
+- **Export** for awards or other software:
+  - **Export CSV** — opens in any spreadsheet.
+  - **Export ADIF** — the standard log format; imports into LoTW, QRZ, and most logging programs, with `POTA_REF` / `SOTA_REF` tags included.
+
+### Map tab — see where the activity is
+
+- **World** shows everything geographically on a full-screen map; **Radar** shows an azimuthal view centered on your station, where a marker's angle is the **true bearing to point your antenna**.
+- **Hollow rings are live spots, colored by band; green dots are your logged contacts; the amber dot is you.** The **All / Live spots / Logged** chips filter which layers show.
+- **Pinch to zoom, drag to pan, double-tap to zoom in** (mouse wheel and double-click on desktop). The **⟲** button returns to the home view.
+- **Tap any marker** for its callsign, reference, distance, bearing, and date.
+
+Everything works **offline** and stays **on your device** — no account, and nothing leaves your phone except the spot-feed requests.
+
+### Protect your log (Tools → Backup & restore)
+
+Your log lives in the browser, so back it up:
+
+- **⬇ Backup** saves a JSON file with your whole log, station, and settings.
+- **⬆ Restore / Import** reads that backup **or an ADIF file** from other logging software. Contacts merge in, duplicates are skipped, and your current station is never overwritten.
 
 ## Running the tests
 
