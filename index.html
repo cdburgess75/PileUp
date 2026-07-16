@@ -40,7 +40,7 @@
     --header-bg:#000000;
   }
   .brand h1{text-shadow:0 0 14px rgba(240,146,60,.9),0 0 32px rgba(240,146,60,.5),0 0 64px rgba(240,146,60,.25);}
-  .clock .val{text-shadow:0 0 12px rgba(240,146,60,.85),0 0 28px rgba(240,146,60,.45);}
+  .clock .val{text-shadow:0 0 12px rgba(174,216,202,.85),0 0 28px rgba(174,216,202,.45);}
   .ident-call{text-shadow:0 0 10px rgba(240,146,60,.75),0 0 22px rgba(240,146,60,.35);}
   .ident-grid{text-shadow:0 0 10px rgba(139,180,232,.75),0 0 22px rgba(139,180,232,.35);}
   .netdot.on{box-shadow:0 0 8px var(--green),0 0 16px rgba(174,216,202,.5);}
@@ -94,8 +94,8 @@
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
   .clock{display:flex;flex-direction:column;gap:1px;}
   .clock .lbl{font-size:8.5px;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;}
-  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--amber);}
-  .clock.local .val{font-size:16px;color:var(--ink);text-shadow:none;}
+  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--green);}
+  .clock.local .val{color:var(--ink);text-shadow:none;}
   .ident{display:flex;gap:14px;align-items:baseline;margin-top:4px;min-height:14px;}
   .ident-call{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--amber);}
   .ident-grid{font-size:11px;letter-spacing:.16em;color:var(--blue);}
@@ -103,7 +103,6 @@
   .brand,.ident{transition:max-height .28s ease,opacity .2s,margin .25s ease;max-height:80px;overflow:hidden;}
   header.min .brand{max-height:0;opacity:0;margin:0;}
   header.min .ident{max-height:0;opacity:0;margin:0;}
-  header.min .clock.local{display:none;}
   header.min .clock .lbl{display:none;}
   header.min .clocks{margin-top:2px;}
   header{transition:padding .25s ease;}
@@ -393,7 +392,7 @@
       <span id="hdrGrid" class="ident-grid"></span>
     </div>
     <div class="clocks">
-      <div class="clock"><span class="lbl">UTC · Zulu</span><span class="val" id="utc">--:--:--</span></div>
+      <div class="clock"><span class="lbl">Zulu</span><span class="val" id="utc">--:--:--</span></div>
       <div class="clock local"><span class="lbl" id="locLbl">Local</span><span class="val" id="loc">--:--</span></div>
     </div>
   </header>
@@ -589,7 +588,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.001";
+const VERSION="2026.07.16.002";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -713,7 +712,10 @@ function tick(){const d=new Date();
     ?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",hour12:true})
     :pad(d.getHours())+":"+pad(d.getMinutes());
   document.getElementById("loc").textContent=locStr;
-  document.getElementById("locLbl").textContent="Local "+(Intl.DateTimeFormat().resolvedOptions().timeZone||"");}
+  // Short zone abbreviation (CDT, PST, GMT+1…) instead of the full IANA name.
+  const tz=new Intl.DateTimeFormat("en-US",{timeZoneName:"short"}).formatToParts(d)
+    .find(p=>p.type==="timeZoneName");
+  document.getElementById("locLbl").textContent=(tz&&tz.value)||"Local";}
 
 /* ============ POTA / SOTA spots ============ */
 function fetchWithTimeout(url,opts,ms){const ac=new AbortController();const id=setTimeout(()=>ac.abort(),ms||7000);

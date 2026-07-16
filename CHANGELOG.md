@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.002
+
+**Changed**
+- Header clocks: the UTC clock is now labelled just **Zulu** and rendered in
+  green (was orange, the brand color); the local clock's label is the short
+  zone abbreviation (CDT, PST…) instead of the full IANA name, and both times
+  are the same size so they sit together. Both stay pinned in the header,
+  side by side, when it collapses on scroll
+
 ## 2026.07.16.001
 
 **Added**
