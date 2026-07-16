@@ -11,7 +11,7 @@
 <!-- The app is one inline script/stylesheet, so 'unsafe-inline' is required;
      the value of this policy is the connect-src allowlist, which pins network
      access to the two spot APIs and the two CORS relay fallbacks. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.pota.app https://api-db2.sota.org.uk https://api2.sota.org.uk https://api.allorigins.win https://corsproxy.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.pota.app https://api-db2.sota.org.uk https://api2.sota.org.uk https://api.hamdb.org https://api.allorigins.win https://corsproxy.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="description" content="Live POTA & SOTA spots and QSO logger for ham radio operators. Installable, works offline, no account.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -321,6 +321,10 @@
     color:var(--ink-dim);text-transform:uppercase;}
   .formgrid label.wide{grid-column:1/-1;}
   .formgrid input{flex:none;width:100%;}
+  .lk-status{grid-column:1/-1;font-size:10.5px;line-height:1.5;letter-spacing:.03em;
+    color:var(--ink-dim);margin:-3px 0 1px;}
+  .lk-status.busy{color:var(--amber);}
+  .lk-status.ok{color:var(--green);}
   .scale-btns{display:flex;gap:5px;margin-bottom:10px;}
   .scale-btn{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--ink-dim);
     font-family:var(--mono);border-radius:6px;cursor:pointer;padding:6px 0;transition:.15s;line-height:1;}
@@ -548,13 +552,15 @@
       <label>Time UTC<input type="text" id="lgTime" placeholder="1530" autocomplete="off"></label>
       <label>Freq kHz<input type="number" id="lgFreq" inputmode="decimal"></label>
       <label>Mode<input type="text" id="lgMode" placeholder="SSB / CW / FT8"></label>
-      <label>Callsign<input type="text" id="lgStation"></label>
+      <label>Callsign<input type="text" id="lgStation" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+      <label>Name<input type="text" id="lgName" autocomplete="off"></label>
       <label>RST Sent<input type="text" id="lgRstS" placeholder="59"></label>
       <label>RST Rcvd<input type="text" id="lgRstR" placeholder="59"></label>
+      <div class="lk-status" id="lgLookup" aria-live="polite" hidden></div>
       <label class="wide">Reference<input type="text" id="lgRef" placeholder="US-1234  or  W5/LO-001"></label>
       <label class="wide">Notes<textarea id="lgNotes" placeholder="rig, antenna, conditions…"></textarea></label>
     </div>
-    <div class="hint" style="margin:-2px 0 12px">Pre-filled from a spot — confirm and save.</div>
+    <div class="hint" style="margin:-2px 0 12px">Type a callsign and press Enter to look up the operator's name.</div>
     <div class="btnrow">
       <button class="btn" id="lgSave">Save</button>
       <button class="btn ghost" id="lgCancel">Cancel</button>
@@ -583,7 +589,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.15.009";
+const VERSION="2026.07.16.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -904,6 +910,9 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   document.getElementById("lgFreq").value=pre.freq||"";
   document.getElementById("lgMode").value=pre.mode||"";
   document.getElementById("lgStation").value=pre.station||"";
+  document.getElementById("lgName").value=pre.opname||"";
+  const lk=document.getElementById("lgLookup");lk.hidden=true;lk.className="lk-status";lk.innerHTML="";
+  _lkLast="";
   document.getElementById("lgRstS").value=pre.rst||"";
   document.getElementById("lgRstR").value=pre.rst_rcvd||"";
   document.getElementById("lgRef").value=pre.ref||"";
@@ -914,12 +923,61 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   // Move screen-reader/keyboard context into the dialog without popping the
   // mobile keyboard (which focusing an input would do).
   document.querySelector("#logModal .sheet").focus();}
+/* ============ callsign lookup ============ */
+// Resolve a callsign to operator name / QTH / grid via HamDB — a free,
+// keyless, CORS-enabled database (strongest for FCC/US calls, with some
+// international coverage). Uses the same direct-then-relay chain as the spot
+// feed; the response is untrusted (a relay could alter it), so every field is
+// escaped before it reaches the DOM and only the Name field is auto-filled,
+// never overwriting text the operator already typed.
+let _lkSeq=0,_lkLast="";
+function lkStatus(cls,html){const el=document.getElementById("lgLookup");
+  el.hidden=false;el.className="lk-status"+(cls?" "+cls:"");el.innerHTML=html;}
+function titleCase(s){return String(s).toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());}
+async function lookupCall(){
+  const raw=(document.getElementById("lgStation").value||"").trim().toUpperCase();
+  // Reduce a portable call to its base for the query: the home call is the
+  // longest "/"-separated chunk, so W1AW/4, DL/W1AW, and VE3XYZ/P all resolve.
+  const call=raw.split("/").filter(Boolean).reduce((a,b)=>b.length>a.length?b:a,"")||raw;
+  if(!/^[A-Z0-9]{3,}$/.test(call)){document.getElementById("lgLookup").hidden=true;_lkLast="";return;}
+  if(call===_lkLast)return;                      // already resolved this call
+  _lkLast=call;const seq=++_lkSeq;
+  lkStatus("busy","Looking up "+esc(call)+"…");
+  const base="https://api.hamdb.org/"+encodeURIComponent(call)+"/json/pileup";
+  let rec=null;
+  for(const url of relays(base)){
+    try{const res=await fetchWithTimeout(url,{cache:"no-store"},8000);
+      if(!res||!res.ok)continue;
+      const h=(JSON.parse(await res.text())||{}).hamdb;
+      if(!h)continue;
+      const ok=h.messages&&String(h.messages.status).toUpperCase()==="OK";
+      const c=h.callsign;
+      if(ok&&c&&c.call&&String(c.call).toUpperCase()!=="NOT_FOUND"){rec=c;}
+      break;                                     // valid response — found or not, stop trying relays
+    }catch(e){}
+  }
+  if(seq!==_lkSeq)return;                         // a newer lookup superseded this one
+  if(!rec){lkStatus("","No record found for "+esc(call)+".");return;}
+  const opname=[rec.fname,rec.name].map(s=>(s||"").trim()).filter(Boolean).join(" ").replace(/\s+/g," ");
+  const grid=(rec.grid||"").trim().slice(0,6).toUpperCase();
+  const country=(rec.country||"").trim();
+  const place=[(rec.addr2||"").trim(),(rec.state||"").trim()].filter(Boolean).join(", ");
+  const nf=document.getElementById("lgName");
+  if(opname&&!nf.value.trim())nf.value=titleCase(opname);   // don't clobber a typed name
+  const bits=[];
+  if(opname)bits.push(titleCase(opname));
+  if(place)bits.push(place);
+  if(country&&country!=="United States")bits.push(country);
+  if(grid)bits.push(grid);
+  lkStatus("ok","✓ "+(bits.length?bits.map(esc).join(" · "):"Found "+esc(call)));
+}
 function saveLog(){
   const o={date:document.getElementById("lgDate").value.trim(),
     time:document.getElementById("lgTime").value.trim().replace(/:/g,""),
     freq:document.getElementById("lgFreq").value.trim(),
     mode:document.getElementById("lgMode").value.trim(),
     station:document.getElementById("lgStation").value.trim(),
+    name:document.getElementById("lgName").value.trim(),
     rst_sent:document.getElementById("lgRstS").value.trim(),
     rst_rcvd:document.getElementById("lgRstR").value.trim(),
     ref:document.getElementById("lgRef").value.trim(),
@@ -980,7 +1038,7 @@ function renderLog(){
   el.innerHTML=list.map(({o,i})=>{
     const badge=o.mode?'<span class="badge">'+esc(o.mode)+'</span>':'';
     const rst=(o.rst_sent&&o.rst_rcvd)?o.rst_sent+'/'+o.rst_rcvd:(o.rst_sent||"");
-    const meta=[esc(o.date)+' '+esc(o.time)+'Z',o.ref?esc(o.ref):'',rst?'RST '+esc(rst):'',o.notes?esc(o.notes):''].filter(Boolean).join(' · ');
+    const meta=[esc(o.date)+' '+esc(o.time)+'Z',o.name?esc(o.name):'',o.ref?esc(o.ref):'',rst?'RST '+esc(rst):'',o.notes?esc(o.notes):''].filter(Boolean).join(' · ');
     return '<div class="row logentry"><div class="freq">'+(o.freq?fmtFreq(+o.freq):"—")+
       '<span class="u">'+(o.freq?freqUnit(+o.freq):'kHz')+'</span></div>'+
       '<div class="mid"><div class="st">'+esc(o.station||"(no callsign)")+badge+'</div>'+
@@ -992,9 +1050,9 @@ function renderLog(){
   if(bm)bm.textContent=bc;if(bd)bd.textContent=bc;}
 function exportLogCSV(){
   if(!LOG.length){toast("Log is empty");return;}
-  const rows=[["date_utc","time_utc","freq_khz","mode","callsign","reference","rst_sent","rst_rcvd","notes"]];
+  const rows=[["date_utc","time_utc","freq_khz","mode","callsign","name","reference","rst_sent","rst_rcvd","notes"]];
   LOG.slice().sort((a,b)=>a.created-b.created).forEach(o=>
-    rows.push([o.date,o.time,o.freq,o.mode||"",o.station,o.ref||"",o.rst_sent||"",o.rst_rcvd||"",o.notes]));
+    rows.push([o.date,o.time,o.freq,o.mode||"",o.station,o.name||"",o.ref||"",o.rst_sent||"",o.rst_rcvd||"",o.notes]));
   // Leading = + - @ would execute as a formula when opened in Excel/Sheets;
   // prefix with ' so hostile text from a logged spot stays inert.
   const cell=c=>{let s=String(c||"");if(/^[=+\-@]/.test(s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"';};
@@ -1015,6 +1073,7 @@ function exportLogADIF(){
     const mode=(o.mode||"").toUpperCase().replace(/^DIG(I)?$/,"MFSK").replace(/^DATA$/,"MFSK");
     const ref=(o.ref||"").trim(),isSota=ref.includes("/"),isPota=!isSota&&/^[A-Z]{1,6}-\d+$/i.test(ref);
     const qso=[tag("QSO_DATE",date),tag("TIME_ON",time),tag("CALL",o.station),
+      tag("NAME",o.name||""),
       tag("FREQ",freqMHz),tag("MODE",mode),
       tag("RST_SENT",o.rst_sent||""),tag("RST_RCVD",o.rst_rcvd||""),
       PREFS.call?tag("MY_CALL",PREFS.call):"",
@@ -1274,7 +1333,7 @@ function mergeQsos(incoming){
     if(have.has(qsoKey(o))){skipped++;continue;}
     have.add(qsoKey(o));
     const entry={date:String(o.date||""),time:String(o.time||""),freq:String(o.freq||""),
-      mode:String(o.mode||""),station:String(o.station||""),rst_sent:String(o.rst_sent||""),
+      mode:String(o.mode||""),station:String(o.station||""),name:String(o.name||""),rst_sent:String(o.rst_sent||""),
       rst_rcvd:String(o.rst_rcvd||""),ref:String(o.ref||""),notes:String(o.notes||""),
       created:o.created&&!LOG.some(e=>e.created===o.created)?o.created:++created};
     if(isFinite(+o.lat)&&isFinite(+o.lng)){entry.lat=+o.lat;entry.lng=+o.lng;}
@@ -1290,7 +1349,7 @@ function parseADIF(text){
     while((m=re.exec(rec))){f[m[1].toUpperCase()]=rec.substr(m.index+m[0].length,+m[2]).trim();}
     if(!f.CALL)return null;
     const d=(f.QSO_DATE||"").replace(/^(\d{4})(\d{2})(\d{2})$/,"$1-$2-$3");
-    return{station:f.CALL,date:d,time:(f.TIME_ON||"").slice(0,4),
+    return{station:f.CALL,date:d,time:(f.TIME_ON||"").slice(0,4),name:f.NAME||"",
       freq:f.FREQ?String(Math.round(parseFloat(f.FREQ)*1000)):"",
       mode:f.MODE||"",rst_sent:f.RST_SENT||"",rst_rcvd:f.RST_RCVD||"",
       ref:f.POTA_REF||f.SOTA_REF||"",notes:f.COMMENT||""};
@@ -1406,6 +1465,11 @@ document.getElementById("expLog").addEventListener("click",exportLogCSV);
 document.getElementById("expAdif").addEventListener("click",exportLogADIF);
 document.getElementById("lgSave").addEventListener("click",saveLog);
 document.getElementById("lgCancel").addEventListener("click",closeLog);
+// Callsign → operator lookup: fires when the field loses focus or the operator
+// presses Enter/Tab, so typing a call fills the name and shows QTH/grid.
+document.getElementById("lgStation").addEventListener("change",lookupCall);
+document.getElementById("lgStation").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();lookupCall();}});
 document.getElementById("logModal").addEventListener("click",ev=>{if(ev.target.id==="logModal")closeLog();});
 
 document.getElementById("saveStation").addEventListener("click",()=>{
