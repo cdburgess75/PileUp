@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.15.009-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.001-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -63,6 +63,7 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 | **Navigation aids** | Distance (km) and bearing (°) to every activation, computed from your saved coordinates |
 | **Worked tracking** | Logged callsigns struck through in the spot list until 0000 UTC; duplicate warning when logging |
 | **Logbook** | Pre-filled entries from spots, manual entry, edit/delete, live band-aware search (`20m` matches 14 MHz) |
+| **Callsign lookup** | Type a call in the log form and press Enter to auto-fill the operator's name plus QTH/grid (free public database, keyless) |
 | **Hunter stats** | QSOs, unique calls, refs, active days; per-band bars and per-mode counts, live from the log |
 | **Map** | World map + azimuthal "QTH radar" views of live spots and logged contacts — embedded coastline, zero network needed |
 | **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
@@ -151,6 +152,7 @@ Also on the Tools tab: dark/light theme (the ☀/☾ in the header toggles it to
 - **Filter by program:** the **All / POTA / SOTA / Other** switch at the top. "Other" is any contact without a park or summit reference — ragchews, nets, DX.
 - **Search** across callsign, reference, mode, date, notes, frequency, and band — multiple terms narrow further (`cw 20m` = CW contacts on 20 m). It combines with the program filter.
 - **Add a contact by hand** with **+ New entry**; **edit** or **delete** any entry from its row.
+- **Callsign lookup:** type a callsign in the log form and press **Enter** (or leave the field) — PileUp fills the operator's **Name** and shows their QTH and grid, using a free public database (best coverage for US/FCC calls). A name you've already typed is never overwritten, and the Name travels with CSV and ADIF export.
 - **▤ Stats** opens a live dashboard: total QSOs, unique callsigns, unique references, active days, plus bars by band and counts by mode.
 - **Export** for awards or other software:
   - **Export CSV** — opens in any spreadsheet.

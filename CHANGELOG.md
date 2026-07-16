@@ -7,6 +7,16 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.001
+
+**Added**
+- Callsign lookup in the log form: type a callsign and press Enter (or leave
+  the field) and PileUp fills the operator's **Name** and shows their QTH and
+  grid, via HamDB's free, keyless database (same direct-then-relay path as the
+  spot feed; strongest for FCC/US calls). The new Name field is shown in the
+  log list and carried through CSV and ADIF export/import (`NAME`). A typed
+  name is never overwritten
+
 ## 2026.07.15.009
 
 **Changed**
