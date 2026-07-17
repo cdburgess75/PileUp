@@ -291,6 +291,9 @@
   .mqth-pulse{fill:none;stroke:var(--amber);stroke-width:1;opacity:.5;}
   #mapSvg{touch-action:pan-y;}          /* page still scrolls at 1×… */
   #mapSvg.zoomed{touch-action:none;}    /* …one finger pans the map when zoomed */
+  /* Fullscreen has no page to scroll, so hand every gesture to the map —
+     otherwise a two-finger pinch at home zoom gets swallowed by pan-y. */
+  #mapCard.map-fs #mapSvg{touch-action:none;}
   #mapSvg svg .mapland{stroke-width:calc(.7px/var(--zk,1));}
   #mapSvg svg .mapgrat{stroke-width:calc(.6px/var(--zk,1));}
   #mapSvg svg .mdot-spot{stroke-width:calc(1.6px/var(--zk,1));}
@@ -605,7 +608,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.005";
+const VERSION="2026.07.16.006";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
