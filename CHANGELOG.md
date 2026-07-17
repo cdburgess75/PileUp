@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.005
+
+**Added**
+- Full-screen map: a ⛶ button expands the map to fill the whole screen (over
+  the header and nav); tap ✕ or press Esc to exit. Uses a CSS overlay so it
+  works in the installed iOS PWA too, and pinch/pan/zoom keep working
+
 ## 2026.07.16.004
 
 **Changed**
