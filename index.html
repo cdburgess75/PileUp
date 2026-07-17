@@ -299,6 +299,18 @@
     border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
     font-size:11px;font-weight:700;letter-spacing:.06em;padding:6px 10px;border-radius:8px;
     cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4);}
+  .map-fs-btn{position:absolute;top:16px;left:16px;z-index:5;background:var(--panel2);
+    border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
+    font-size:15px;line-height:1;padding:5px 9px;border-radius:8px;cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.4);}
+  #mapCard{position:relative;padding:10px;}
+  /* CSS-overlay fullscreen: fills the app viewport over the header/nav. Works
+     everywhere (incl. the installed iOS PWA, where element requestFullscreen
+     is unsupported). ID-level specificity so it beats #mapCard's own position. */
+  #mapCard.map-fs{position:fixed;inset:0;z-index:85;margin:0;border:none;border-radius:0;
+    background:var(--bg);
+    padding:max(10px,env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));}
+  #mapCard.map-fs .map-fs-btn,#mapCard.map-fs .map-reset{top:max(16px,calc(env(safe-area-inset-top) + 6px));}
   .maplegend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:9.5px;
     color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
   .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
@@ -463,8 +475,9 @@
       <span class="chip" data-ml="spots">Live spots</span>
       <span class="chip" data-ml="log">Logged</span>
     </div>
-    <div class="card" style="padding:10px;position:relative">
+    <div class="card" id="mapCard">
       <div id="mapSvg"></div>
+      <button class="map-fs-btn" id="mapFs" aria-label="Full screen" title="Full screen">⛶</button>
       <button class="map-reset" id="mapReset" hidden aria-label="Reset zoom">⟲ 1×</button>
       <div class="maplegend">
         <span><span class="mkey mk-spot"></span> live spot</span>
@@ -473,8 +486,8 @@
       </div>
       <div class="hint" id="mapInfo" style="min-height:16px;margin-top:6px;text-align:center"></div>
     </div>
-    <div class="hint" style="margin-top:2px"><b>World</b> plots everything geographically —
-      pinch to zoom, drag to pan, double-tap to jump in. <b>Radar</b> is the azimuthal view
+    <div class="hint" style="margin-top:2px">Tap <b>⛶</b> for full screen. <b>World</b> plots everything
+      geographically — pinch to zoom, drag to pan, double-tap to jump in. <b>Radar</b> is the azimuthal view
       from your station — bearing is the direction to point your antenna. Logged contacts
       appear once saved from a spot (coordinates are captured automatically).</div>
   </section>
@@ -592,7 +605,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.004";
+const VERSION="2026.07.16.005";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1184,6 +1197,13 @@ function renderWorld(el,pts){
    chips above and legend/nav below; radar keeps its square. */
 function sizeMapBox(el){
   if(el.clientWidth===0)return;
+  // Fullscreen: fill from the map's top down to just above the legend/info row.
+  if(document.getElementById("mapCard").classList.contains("map-fs")){
+    const top=el.getBoundingClientRect().top;
+    const avail=Math.max(220,window.innerHeight-top-70);
+    el.style.height=(mapView==="world"?avail:Math.min(el.clientWidth,avail))+"px";
+    return;
+  }
   if(mapView==="world"){
     const top=el.getBoundingClientRect().top;
     const h=Math.max(300,Math.min(window.innerHeight-top-238,720));
@@ -1298,6 +1318,20 @@ function mapZoomAt(px,py,factor){
     if(_mz.k>=8)mapHome();else mapZoomAt(px,py,2);});
   document.getElementById("mapReset").addEventListener("click",mapHome);
 })();
+// Full-screen map: expand the map card to fill the viewport (CSS overlay) and
+// re-fit the view for the new size. Toggled by the ⛶ button or Escape.
+function setMapFs(on){
+  const card=document.getElementById("mapCard");
+  if(card.classList.contains("map-fs")===on)return;
+  card.classList.toggle("map-fs",on);
+  const btn=document.getElementById("mapFs");
+  btn.textContent=on?"✕":"⛶";
+  btn.setAttribute("aria-label",on?"Exit full screen":"Full screen");
+  btn.title=btn.getAttribute("aria-label");
+  renderMap();
+}
+document.getElementById("mapFs").addEventListener("click",()=>
+  setMapFs(!document.getElementById("mapCard").classList.contains("map-fs")));
 function renderMapInfo(pts){
   const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
   document.getElementById("mapInfo").textContent=
@@ -1389,6 +1423,7 @@ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catc
 
 /* ============ navigation ============ */
 function showTab(name){
+  if(name!=="map")setMapFs(false);   // never leave the fullscreen map covering another tab
   document.querySelectorAll(".bnav-btn[data-tab],.snav-btn[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
   ["spots","log","map","tools"].forEach(t=>document.getElementById("tab-"+t).hidden=(t!==name));
   if(name==="spots")openSpots();
@@ -1433,6 +1468,7 @@ document.getElementById("lgDelete").addEventListener("click",()=>{
   if(editIdx<0)return;const entry=LOG[editIdx];if(!entry)return;
   LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast("Deleted");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("mapCard").classList.contains("map-fs"))setMapFs(false);});
 // Enter/Space activate the role="button" spot rows and edit/del controls.
 // Click the focused element itself so a focused ＋ logs while a focused row
 // toggles — same branching the pointer path uses.
