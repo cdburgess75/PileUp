@@ -50,7 +50,7 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 
 | Live spots | Searchable logbook |
 |:---:|:---:|
-| <img src="docs/screenshot-spots.png" alt="Live POTA spots with band colors, distance/bearing, and worked strikethrough" width="320"> | <img src="docs/screenshot-log.png" alt="Logbook filtered live by typing 20m in the search box" width="320"> |
+| <img src="docs/screenshot-spots.png" alt="Live POTA spots in compact rows with band-colored pills, references, and ages" width="320"> | <img src="docs/screenshot-log.png" alt="QSO logbook with operator names auto-filled from callsign lookup" width="320"> |
 
 </div>
 
@@ -65,12 +65,25 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 | **Logbook** | Pre-filled entries from spots, manual entry, edit/delete, live band-aware search (`20m` matches 14 MHz) |
 | **Callsign lookup** | Type a call in the log form and press Enter to auto-fill the operator's name plus QTH/grid (free public database, keyless) |
 | **Hunter stats** | QSOs, unique calls, refs, active days; per-band bars and per-mode counts, live from the log |
-| **Map** | World map + azimuthal "QTH radar" views of live spots and logged contacts — embedded coastline, zero network needed |
+| **Map** | Full-screen world map + azimuthal "QTH radar" views of live spots and logged contacts — band-colored, pinch/zoom/pan, embedded coastline, zero network needed |
 | **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
 | **Data safety** | One-tap JSON backup of everything; restore or import ADIF logs with duplicate-safe merging; persistent-storage request |
 | **Station tools** | Callsign + lat/lng + Maidenhead grid with GPS auto-locate |
-| **UI** | Dark/light themes, three font sizes, 12/24 h clock, kiosk mode (fullscreen + wake-lock), UTC + local clocks |
+| **UI** | Dark/light themes, three font sizes, 12/24 h clock, kiosk mode (fullscreen + wake-lock); dual UTC (Zulu) + local LED clocks with seconds |
+| **Responsive** | One layout from 320 px phones to desktop — bottom nav on mobile, a left sidebar on wide screens; spot rows shed columns to keep full callsigns visible |
 | **Offline** | Service-worker shell cache, versioned; last spot fetch cached for offline reload |
+
+## Works on every screen
+
+PileUp is a single responsive layout that runs from a 320 px phone up to a desktop browser. On phones (shown above) you get a bottom tab bar and one comfortable column; on wide screens the tabs move to a left sidebar and the content stays readable rather than stretching. Spot rows measure the actual width and shed columns as needed, so a **full callsign is never truncated** at any size.
+
+<div align="center">
+
+<img src="docs/device-desktop.png" alt="PileUp desktop layout with a left sidebar" width="760">
+
+<img src="docs/device-tablet.png" alt="PileUp tablet layout" width="380">
+
+</div>
 
 ## Architecture
 
