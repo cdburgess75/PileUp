@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.006
+
+**Fixed**
+- Pinch-to-zoom now works in the full-screen map at the home zoom level. The
+  map kept `touch-action:pan-y` (so the page can scroll under it at 1× in the
+  normal view), which swallowed the pinch in full screen where there's no page
+  to scroll — full screen now hands every gesture to the map
+
 ## 2026.07.16.005
 
 **Added**

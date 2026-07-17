@@ -1,4 +1,4 @@
-const CACHE = "pileup-2026.07.16.005";
+const CACHE = "pileup-2026.07.16.006";
 const SHELL = [
   "/PileUp/",
   "/PileUp/index.html",
