@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.003
+
+**Changed**
+- Both header clocks now show seconds, and use LED-style faces: the Zulu clock
+  is green, the local clock blue, each with a matching glow (darker, readable
+  variants in light mode)
+
 ## 2026.07.16.002
 
 **Changed**

@@ -36,11 +36,14 @@
     --blue:#8bb4e8;--blue-dim:#5a8fd0;
     --red:#e8635a;
     --ink:#f4f4f6;--ink-dim:#9aa8c2;
+    /* LED clock faces — vivid on black; darker readable variants in light mode */
+    --clk-green:#4be08a;--clk-blue:#49b6ff;
     --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Roboto Mono",monospace;
     --header-bg:#000000;
   }
   .brand h1{text-shadow:0 0 14px rgba(240,146,60,.9),0 0 32px rgba(240,146,60,.5),0 0 64px rgba(240,146,60,.25);}
-  .clock .val{text-shadow:0 0 12px rgba(174,216,202,.85),0 0 28px rgba(174,216,202,.45);}
+  .clock .val{text-shadow:0 0 12px rgba(75,224,138,.9),0 0 28px rgba(75,224,138,.5);}
+  .clock.local .val{text-shadow:0 0 12px rgba(73,182,255,.9),0 0 28px rgba(73,182,255,.5);}
   .ident-call{text-shadow:0 0 10px rgba(240,146,60,.75),0 0 22px rgba(240,146,60,.35);}
   .ident-grid{text-shadow:0 0 10px rgba(139,180,232,.75),0 0 22px rgba(139,180,232,.35);}
   .netdot.on{box-shadow:0 0 8px var(--green),0 0 16px rgba(174,216,202,.5);}
@@ -52,6 +55,7 @@
     --blue:#1f5fb0;--blue-dim:#9cc0e8;
     --red:#C83430;
     --ink:#12202f;--ink-dim:#3a4655;
+    --clk-green:#1c8a55;--clk-blue:#1f63c8;
     --header-bg:linear-gradient(180deg,#F7F7F7,#FFFFFF);
   }
   [data-theme="light"] body{background-image:none;}
@@ -94,8 +98,8 @@
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
   .clock{display:flex;flex-direction:column;gap:1px;}
   .clock .lbl{font-size:8.5px;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;}
-  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--green);}
-  .clock.local .val{color:var(--ink);text-shadow:none;}
+  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--clk-green);}
+  .clock.local .val{color:var(--clk-blue);}
   .ident{display:flex;gap:14px;align-items:baseline;margin-top:4px;min-height:14px;}
   .ident-call{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--amber);}
   .ident-grid{font-size:11px;letter-spacing:.16em;color:var(--blue);}
@@ -588,7 +592,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.002";
+const VERSION="2026.07.16.003";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -709,8 +713,8 @@ document.addEventListener("fullscreenchange",async()=>{
 function tick(){const d=new Date();
   document.getElementById("utc").textContent=pad(d.getUTCHours())+":"+pad(d.getUTCMinutes())+":"+pad(d.getUTCSeconds());
   const locStr=PREFS.hr24===false
-    ?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",hour12:true})
-    :pad(d.getHours())+":"+pad(d.getMinutes());
+    ?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true})
+    :pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
   document.getElementById("loc").textContent=locStr;
   // Short zone abbreviation (CDT, PST, GMT+1…) instead of the full IANA name.
   const tz=new Intl.DateTimeFormat("en-US",{timeZoneName:"short"}).formatToParts(d)
