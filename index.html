@@ -388,6 +388,14 @@
   @keyframes updot{0%,100%{box-shadow:0 0 0 0 rgba(240,146,60,.55);}50%{box-shadow:0 0 0 5px rgba(240,146,60,0);}}
   .upbanner .up-close{background:none;border:none;color:var(--ink-dim);font-size:12px;cursor:pointer;
     padding:4px 5px;line-height:1;}
+  /* Install banner: same slot/animation as the update banner, but its message
+     can wrap (the iOS hint is a full sentence). */
+  #instBanner{white-space:normal;max-width:min(360px,calc(100vw - 24px));gap:9px;}
+  #instBanner .up-msg{text-transform:none;font-weight:600;letter-spacing:.02em;line-height:1.35;font-size:11px;}
+  /* QR must stay black-on-white to scan, so it sits in its own white tile. */
+  .qrrow{display:flex;gap:13px;align-items:center;}
+  .qrbox{background:#fff;padding:8px;border-radius:10px;width:118px;height:118px;flex-shrink:0;}
+  .qrbox svg{display:block;width:100%;height:100%;}
 </style>
 </head>
 <body>
@@ -565,10 +573,25 @@
         file. <b>LoTW</b> signs your ADIF with the TQSL app. <b>QRZ</b> / <b>Club Log</b>: use their logbook import.</div>
     </div>
 
+    <div class="card" id="installCard">
+      <h3>◆ Install on your phone</h3>
+      <div class="hint" id="installHint" style="margin-bottom:10px">PileUp is a website — you can just open the link.
+        Installing adds a home-screen icon, offline use, and fullscreen.</div>
+      <div class="btnrow"><button class="btn sm" id="installCardBtn" hidden>⬇ Install app</button></div>
+      <div class="hint" id="installSteps" hidden>On iPhone: open in <b>Safari</b>, tap the <b>Share</b> button,
+        then <b>Add to Home Screen</b>. (Apple doesn't let apps do this step for you.)</div>
+    </div>
+
     <div class="card" id="shareCard">
       <h3>◆ Share PileUp</h3>
-      <div class="hint" style="margin-bottom:10px">Send the app to another operator.</div>
-      <button class="btn sm" id="shareBtn">⇪ Share link</button>
+      <div class="hint" style="margin-bottom:10px">Send the app to another operator — or point their phone at the code.</div>
+      <div class="qrrow">
+        <div class="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges" role="img" aria-label="QR code linking to PileUp"><path fill="#ffffff" d="M0 0h31v31H0z"/><path stroke="#000000" d="M1 1.5h7m3 0h2m1 0h1m5 0h2m1 0h7M1 2.5h1m5 0h1m2 0h2m2 0h3m4 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m3 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h1m2 0h2m2 0h3m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m1 0h4m2 0h5m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m3 0h4m1 0h1m1 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h1m1 0h2m1 0h1m1 0h2m1 0h3M1 9.5h1m1 0h5m4 0h1m2 0h4m4 0h5M1 10.5h2m1 0h2m2 0h1m7 0h2m2 0h2m1 0h3m3 0h1M7 11.5h2m4 0h1m2 0h2m4 0h1m1 0h2M1 12.5h1m1 0h1m2 0h1m1 0h2m2 0h2m1 0h3m2 0h7m1 0h1M3 13.5h2m2 0h2m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m3 0h1m1 0h2M1 14.5h3m1 0h2m5 0h4m1 0h1m1 0h2m1 0h4m3 0h1M2 15.5h1m2 0h3m1 0h4m1 0h3m1 0h2m1 0h1m4 0h2M4 16.5h3m1 0h3m2 0h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1M5 17.5h3m4 0h1m2 0h1m2 0h2m1 0h1m4 0h2M1 18.5h1m1 0h1m5 0h1m1 0h3m3 0h4m1 0h4m1 0h1m1 0h1M1 19.5h1m1 0h2m1 0h3m3 0h2m2 0h3m2 0h1m3 0h1m1 0h1M1 20.5h1m4 0h1m1 0h1m4 0h1m1 0h2m2 0h3m2 0h2m2 0h1M1 21.5h1m1 0h3m1 0h1m4 0h1m5 0h1m2 0h5m1 0h3M9 22.5h4m1 0h2m1 0h5m3 0h5M1 23.5h7m2 0h3m1 0h3m2 0h3m1 0h1m1 0h3M1 24.5h1m5 0h1m1 0h2m3 0h1m1 0h1m4 0h1m3 0h1M1 25.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m2 0h5m1 0h1M1 26.5h1m1 0h3m1 0h1m1 0h2m3 0h1m1 0h6m4 0h4M1 27.5h1m1 0h3m1 0h1m1 0h1m3 0h6m4 0h6M1 28.5h1m5 0h1m9 0h1m2 0h3m1 0h1m1 0h1m1 0h1M1 29.5h7m1 0h3m3 0h1m2 0h3m2 0h1m1 0h1m1 0h1"/></svg></div>
+        <div>
+          <button class="btn sm" id="shareBtn">⇪ Share link</button>
+          <div class="hint" style="margin-top:8px">Scan to open PileUp instantly — no install needed.</div>
+        </div>
+      </div>
     </div>
 
     <footer>
@@ -617,6 +640,13 @@
   <button class="up-close" id="upDismiss" aria-label="Dismiss">✕</button>
 </div>
 
+<!-- install prompt (Android one-tap / iOS hint) -->
+<div class="upbanner" id="instBanner" role="dialog" aria-label="Install PileUp">
+  <span class="up-msg" id="instMsg">Add PileUp to your home screen</span>
+  <button class="btn sm" id="instBtn" hidden>⬇ Install</button>
+  <button class="up-close" id="instDismiss" aria-label="Dismiss">✕</button>
+</div>
+
 <!-- bottom nav -->
 <nav class="bottomnav" id="bottomNav">
   <button class="bnav-btn on" data-tab="spots"><span class="bicon">◎</span>Spots</button>
@@ -627,7 +657,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.009";
+const VERSION="2026.07.16.010";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1578,6 +1608,48 @@ document.getElementById("shareBtn").addEventListener("click",async()=>{
     else{toast(url);}
   }catch(e){}
 });
+
+/* ============ install / add-to-home ============ */
+// One-tap install where the browser allows it (Android/Chromium/desktop fire
+// beforeinstallprompt); iOS/Safari can't be automated by anyone, so we only
+// hint the manual Share → Add to Home Screen steps there. Everything hides once
+// the app is running installed (standalone).
+let _installEvt=null,_installReady=false;
+function isStandalone(){return(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);}
+function refreshInstallUI(){
+  const installed=isStandalone(),canPrompt=!!_installEvt,ios=isIOS()&&!installed&&!canPrompt;
+  const cardBtn=document.getElementById("installCardBtn"),steps=document.getElementById("installSteps"),hint=document.getElementById("installHint");
+  if(cardBtn)cardBtn.hidden=!canPrompt;
+  if(steps)steps.hidden=!ios;
+  if(hint)hint.textContent=installed
+    ?"✓ PileUp is installed on this device."
+    :"PileUp is a website — you can just open the link. Installing adds a home-screen icon, offline use, and fullscreen.";
+  const banner=document.getElementById("instBanner");
+  if(banner){
+    document.getElementById("instBtn").hidden=!canPrompt;
+    document.getElementById("instMsg").innerHTML=canPrompt
+      ?"Install PileUp for one-tap access and offline use"
+      :"Add PileUp to your home screen: tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>.";
+    banner.classList.toggle("show",_installReady&&!installed&&!PREFS.installDismissed&&(canPrompt||ios));
+  }
+}
+async function doInstall(){
+  if(!_installEvt)return;
+  _installEvt.prompt();
+  try{await _installEvt.userChoice;}catch(e){}
+  _installEvt=null;document.getElementById("instBanner").classList.remove("show");refreshInstallUI();
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();_installEvt=e;refreshInstallUI();});
+window.addEventListener("appinstalled",()=>{_installEvt=null;PREFS.installDismissed=true;saveJSON(K.prefs,PREFS);
+  document.getElementById("instBanner").classList.remove("show");refreshInstallUI();toast("Installed 🎉");});
+document.getElementById("installCardBtn").addEventListener("click",doInstall);
+document.getElementById("instBtn").addEventListener("click",doInstall);
+document.getElementById("instDismiss").addEventListener("click",()=>{
+  PREFS.installDismissed=true;saveJSON(K.prefs,PREFS);document.getElementById("instBanner").classList.remove("show");});
+refreshInstallUI();
+// Delay the banner reveal so it doesn't slam up on first paint.
+setTimeout(()=>{_installReady=true;refreshInstallUI();},2600);
 
 window.addEventListener("online",()=>{if(!document.getElementById("tab-spots").hidden)refreshSpots();});
 window.addEventListener("offline",()=>{if(!document.getElementById("tab-spots").hidden)renderSpots();});

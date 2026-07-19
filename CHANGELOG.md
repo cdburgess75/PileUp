@@ -7,6 +7,18 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.010
+
+**Added**
+- Easier install: on Android/desktop a one-tap **Install** button (and a
+  dismissible banner) appears via the browser's install prompt. On iPhone —
+  where Apple allows no automated install — a short hint shows the Safari
+  Share → Add to Home Screen steps. Everything hides once installed
+- **QR code** on the Tools → Share card: point another operator's phone at it
+  to open PileUp instantly, no install needed
+- Tools → "Install on your phone" card that also makes clear you can just use
+  the link — installing only adds the icon, offline, and fullscreen
+
 ## 2026.07.16.009
 
 **Changed**
