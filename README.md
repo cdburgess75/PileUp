@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.16.007-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.008-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -187,6 +187,10 @@ Your log lives in the browser, so back it up:
 
 - **⬇ Backup** saves a JSON file with your whole log, station, and settings.
 - **⬆ Restore / Import** reads that backup **or an ADIF file** from other logging software. Contacts merge in, duplicates are skipped, and your current station is never overwritten.
+
+### Submitting logs (Tools → Upload / submit logs)
+
+PileUp keeps your log on your device — it doesn't sync to POTA. To submit it, **Export ADIF** and upload that file to the service you use; the card links straight to the **POTA**, **QRZ**, **LoTW**, and **Club Log** upload pages. Note that **POTA hunter credit is automatic** once the activator uploads their log — you only need to submit a log if *you* activated a park.
 
 ## Running the tests
 
