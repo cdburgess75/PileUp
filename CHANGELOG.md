@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.016
+
+**Changed**
+- The Zulu clock is now amber/gold instead of green, so it contrasts the
+  green-themed app and the cyan local clock (less green overall)
+- Map zoom range widened a lot — you can zoom out past the whole globe (with an
+  ocean margin) and in much deeper (up to ~60×)
+
 ## 2026.07.16.015
 
 **Changed**
