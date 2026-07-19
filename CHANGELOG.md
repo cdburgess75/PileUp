@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.013
+
+**Added**
+- Tapping a marker on the map now opens a full preview card with everything the
+  Spots page shows — frequency, band, callsign, mode, park/summit reference and
+  name, distance, bearing, age, location, and comments — plus a **＋ Log**
+  button to log the contact straight from the map. Logged markers show their
+  saved details. Tap the map background or ✕ to dismiss
+
 ## 2026.07.16.012
 
 **Changed**

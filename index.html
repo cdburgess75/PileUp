@@ -328,6 +328,26 @@
   [data-theme="light"] .map-ctl-top{background:linear-gradient(180deg,rgba(249,251,255,.72),rgba(249,251,255,0));}
   [data-theme="light"] .map-ctl-bot{background:linear-gradient(0deg,rgba(249,251,255,.78),rgba(249,251,255,0));}
   @media(min-width:860px){.map-ctl-bot{padding-bottom:16px;}}
+  /* Marker preview card — slides up from the bottom over the map. */
+  .mappop{position:fixed;left:50%;transform:translate(-50%,calc(100% + 30px));z-index:88;
+    bottom:calc(64px + env(safe-area-inset-bottom));width:calc(100vw - 24px);max-width:420px;
+    background:var(--panel2);border:1px solid var(--amber-dim);border-radius:14px;padding:14px 15px 15px;
+    box-shadow:0 12px 34px rgba(0,0,0,.6);transition:transform .32s cubic-bezier(.2,.9,.3,1.05);}
+  .mappop.show{transform:translate(-50%,0);}
+  .mappop[hidden]{display:none;}
+  @media(min-width:860px){.mappop{bottom:24px;}}
+  .mappop-x{position:absolute;top:8px;right:9px;background:none;border:none;color:var(--ink-dim);
+    font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;}
+  .pop-top{display:flex;align-items:center;gap:9px;margin-bottom:2px;min-height:22px;}
+  .pop-freq{font-size:20px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+  .pop-freq .u{font-size:9px;color:var(--ink-dim);font-weight:500;letter-spacing:.08em;}
+  .pop-call{font-size:17px;font-weight:700;letter-spacing:.06em;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .pop-call.worked{text-decoration:line-through;text-decoration-color:var(--green);text-decoration-thickness:2px;}
+  .pop-badge{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);
+    border:1px solid var(--green-dim);border-radius:20px;padding:2px 7px;text-decoration:none;}
+  .pop-ref{font-size:12px;color:var(--blue);letter-spacing:.03em;margin-top:5px;}
+  .pop-meta{font-size:11px;color:var(--ink-dim);letter-spacing:.04em;margin-top:4px;}
+  .pop-cmt{font-size:11.5px;color:var(--ink-dim);margin-top:7px;font-style:italic;line-height:1.4;}
   .maplegend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:9.5px;
     color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
   .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
@@ -366,7 +386,7 @@
   .upd-spin{animation:spin 1s linear infinite;display:inline-block;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.66);display:flex;align-items:flex-end;justify-content:center;}
+  .modal{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.66);display:flex;align-items:flex-end;justify-content:center;}
   .modal[hidden]{display:none;}
   .sheet{width:100%;max-width:760px;background:var(--panel2);border-top:1px solid var(--amber-dim);
     border-radius:16px 16px 0 0;padding:18px 16px max(18px,env(safe-area-inset-bottom));
@@ -614,6 +634,12 @@
 </div><!-- /.wrap -->
 </div><!-- /#layout -->
 
+<!-- map marker preview -->
+<div class="mappop" id="mapPop" role="dialog" aria-label="Spot details" hidden>
+  <button class="mappop-x" id="mapPopClose" aria-label="Close">✕</button>
+  <div id="mapPopBody"></div>
+</div>
+
 <!-- log modal -->
 <div class="modal" id="logModal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="logTitle" tabindex="-1">
@@ -667,7 +693,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.012";
+const VERSION="2026.07.16.013";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1237,15 +1263,20 @@ function mapR(km){const rmax=178;
   return rmax*Math.log10(1+km/25)/Math.log10(1+MAP_MAX_KM/25);}
 function mapPoints(){
   const pts=[];
+  // Carry the full spot/log record so tapping a marker can preview everything
+  // the Spots page shows, and log straight from the map.
   if(mapLayer!=="log")for(const prog of["pota","sota"])
     for(const s of(SPOTS[prog].list||[]))
       if(isFinite(s.lat)&&isFinite(s.lng))
-        pts.push({kind:"spot",call:s.call,ref:s.ref,lat:s.lat,lng:s.lng,
+        pts.push({kind:"spot",prog,call:s.call,ref:s.ref,name:s.name,loc:s.loc,mode:s.mode,
+          freq:s.freq,comments:s.comments,when:s.when,lat:s.lat,lng:s.lng,
           color:BAND_COLOR[hamBandOf(s.freq)]||""});
   if(mapLayer!=="spots")for(const o of LOG)
     if(isFinite(o.lat)&&isFinite(o.lng))
-      pts.push({kind:"log",call:o.station,ref:o.ref,lat:o.lat,lng:o.lng,date:o.date});
+      pts.push({kind:"log",call:o.station,ref:o.ref,name:o.name,mode:o.mode,freq:o.freq,
+        notes:o.notes,date:o.date,time:o.time,lat:o.lat,lng:o.lng});
   return pts;}
+let _mapPts=[];
 function dotLabel(p,km){
   return(p.call||"?")+(p.ref?" · "+p.ref:"")+" · "+Math.round(km)+" km · "+
     Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng))+"°"+(p.date?" · "+p.date:"");}
@@ -1256,13 +1287,13 @@ function renderWorld(el,pts){
   for(let x=120;x<720;x+=120)svg+='<line class="mapgrat" x1="'+x+'" y1="0" x2="'+x+'" y2="360"/>';
   for(let y=60;y<360;y+=60)svg+='<line class="mapgrat" x1="0" y1="'+y+'" x2="720" y2="'+y+'"/>';
   svg+='<path class="mapland" d="'+WORLD_PATH+'"/>';
-  for(const p of pts){
+  pts.forEach((p,i)=>{
     const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng),label=dotLabel(p,km);
     const x=X(p.lng).toFixed(1),y=Y(p.lat).toFixed(1);
     svg+='<circle class="mdot-'+p.kind+'"'+(p.color?' style="stroke:'+p.color+'"':'')+
       ' cx="'+x+'" cy="'+y+'" r="'+(p.kind==="log"?5.5:5)+'">'+
       '<title>'+esc(label)+'</title></circle>'+
-      '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x+'" cy="'+y+'" r="13"/>';}
+      '<circle class="mhit" data-mi="'+i+'" cx="'+x+'" cy="'+y+'" r="13"/>';});
   const qx=X(GEO.lng).toFixed(1),qy=Y(GEO.lat).toFixed(1);
   svg+='<circle class="mqth-pulse" cx="'+qx+'" cy="'+qy+'" r="10"/>'+
        '<circle class="mdot-qth" cx="'+qx+'" cy="'+qy+'" r="4.5"/></svg>';
@@ -1285,8 +1316,9 @@ function sizeMapBox(el){
 }
 function renderMap(){
   const el=document.getElementById("mapSvg");if(!el)return;
+  closeMapPop();                       // markers rebuild — drop any stale preview
   sizeMapBox(el);
-  const C=200,pts=mapPoints();
+  const C=200,pts=mapPoints();_mapPts=pts;
   if(mapView==="world"){renderWorld(el,pts);renderMapInfo(pts);return;}
   let svg='<svg viewBox="0 0 400 400" role="img" aria-label="Azimuthal map of spots and logged contacts">';
   svg+='<line class="mapaxis" x1="200" y1="14" x2="200" y2="386"/>'+
@@ -1300,14 +1332,14 @@ function renderMap(){
        '<text class="maplbl" x="394" y="204" text-anchor="middle">E</text>'+
        '<text class="maplbl" x="200" y="398" text-anchor="middle">S</text>'+
        '<text class="maplbl" x="6" y="204" text-anchor="middle">W</text>';
-  for(const p of pts){
+  pts.forEach((p,i)=>{
     const km=haversine(GEO.lat,GEO.lng,p.lat,p.lng);
     const br=bearing(GEO.lat,GEO.lng,p.lat,p.lng)*Math.PI/180;
     const r=mapR(km),x=C+r*Math.sin(br),y=C-r*Math.cos(br),label=dotLabel(p,km);
     svg+='<circle class="mdot-'+p.kind+'"'+(p.color?' style="stroke:'+p.color+'"':'')+
       ' cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+
       '" r="'+(p.kind==="log"?4.5:4)+'"><title>'+esc(label)+'</title></circle>'+
-      '<circle class="mhit" data-mi="'+attr(label)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11"/>';}
+      '<circle class="mhit" data-mi="'+i+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11"/>';});
   svg+='<circle class="mqth-pulse" cx="200" cy="200" r="8"/>'+
        '<circle class="mdot-qth" cx="200" cy="200" r="4"/></svg>';
   el.innerHTML=svg;applyMapZoom();
@@ -1420,8 +1452,46 @@ document.getElementById("mapViewChips").addEventListener("click",ev=>{
   renderMap();});
 document.querySelectorAll("#mapViewChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.mv===mapView));
 document.getElementById("mapSvg").addEventListener("click",ev=>{
-  const d=ev.target.closest("[data-mi]");if(!d)return;
-  document.getElementById("mapInfo").textContent=d.dataset.mi;});
+  const d=ev.target.closest("[data-mi]");
+  if(!d){closeMapPop();return;}                 // tap the map background to dismiss
+  const p=_mapPts[+d.dataset.mi];if(p)showMapPop(p);});
+// Marker preview: the same detail the Spots page shows, plus a one-tap Log.
+function showMapPop(p){
+  const km=Math.round(haversine(GEO.lat,GEO.lng,p.lat,p.lng));
+  const brg=Math.round(bearing(GEO.lat,GEO.lng,p.lat,p.lng));
+  const band=isFinite(+p.freq)&&+p.freq?hamBandOf(+p.freq):"";
+  const bc=band&&BAND_COLOR[band]?' style="--bc:'+BAND_COLOR[band]+';--bt:'+bandInk(BAND_COLOR[band])+'"':'';
+  const bandTag=band?'<span class="tag band"'+bc+'>'+band.replace(/\s*m$/i,"")+'</span>':'';
+  const md=p.mode?'<span class="badge">'+esc(p.mode)+'</span>':'';
+  const freq=(isFinite(+p.freq)&&+p.freq)?'<span class="pop-freq">'+fmtFreq(+p.freq)+' <span class="u">'+freqUnit(+p.freq)+'</span></span>':'';
+  const worked=p.kind==="spot"&&p.call&&_worked.has((p.call||"").toUpperCase().trim());
+  const ref=[esc(p.ref),esc(p.name)].filter(Boolean).join(" — ");
+  const when=p.kind==="spot"?(p.when?ageStr(+p.when):""):[esc(p.date),p.time?esc(p.time)+"Z":""].filter(Boolean).join(" ");
+  const meta=[km+" km",brg+"°",when,p.kind==="spot"?esc(p.loc||""):""].filter(Boolean).join(" · ");
+  let html='<div class="pop-top">'+freq+bandTag+'</div>'+
+    '<div class="pop-call'+(worked?" worked":"")+'">'+esc(p.call||"?")+md+(p.kind==="log"?'<span class="pop-badge">✓ logged</span>':(worked?'<span class="pop-badge">✓ worked</span>':''))+'</div>'+
+    (ref?'<div class="pop-ref">'+ref+'</div>':'')+
+    (meta?'<div class="pop-meta">'+meta+'</div>':'')+
+    (p.kind==="spot"&&p.comments?'<div class="pop-cmt">"'+esc(p.comments)+'"</div>':'')+
+    (p.kind==="log"&&p.notes?'<div class="pop-cmt">'+esc(p.notes)+'</div>':'');
+  if(p.kind==="spot")html+='<div class="btnrow" style="margin:11px 0 0"><button class="btn sm" id="mapPopLog">＋ Log</button></div>';
+  document.getElementById("mapPopBody").innerHTML=html;
+  const pop=document.getElementById("mapPop");pop.hidden=false;requestAnimationFrame(()=>pop.classList.add("show"));
+  const lg=document.getElementById("mapPopLog");
+  if(lg)lg.addEventListener("click",()=>{closeMapPop();logFromMapPoint(p);});
+}
+function closeMapPop(){const pop=document.getElementById("mapPop");if(pop){pop.classList.remove("show");pop.hidden=true;}}
+function logFromMapPoint(p){
+  const prog=(p.prog||spotProg).toUpperCase(),mode=p.mode||"",call=p.call||"",ref=p.ref||"",name=p.name||"",
+    f=(isFinite(+p.freq)&&+p.freq)?Math.round(+p.freq):"";
+  const rst=/CW|FT8|FT4|RTTY|JS8|PSK|DATA|DIG|JT/i.test(mode)?"599":"59";
+  const notes=[prog+" "+ref+(name?" — "+name:""),f?(+f/1000).toFixed(3)+" MHz":"",mode].filter(Boolean).join(" · ");
+  const today=new Date().toISOString().slice(0,10);
+  const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
+  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,
+    lat:isFinite(p.lat)?p.lat:undefined,lng:isFinite(p.lng)?p.lng:undefined});
+}
+document.getElementById("mapPopClose").addEventListener("click",closeMapPop);
 
 /* ============ backup / restore ============ */
 // Duplicate detection for merges: same callsign + UTC date + time is the same
@@ -1491,7 +1561,7 @@ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catc
 
 /* ============ navigation ============ */
 function showTab(name){
-  if(name!=="map")setMapFs(false);   // never leave the fullscreen map covering another tab
+  if(name!=="map"){setMapFs(false);closeMapPop();}   // never leave the fullscreen map or its popup up
   document.querySelectorAll(".bnav-btn[data-tab],.snav-btn[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
   ["spots","log","map","tools"].forEach(t=>document.getElementById("tab-"+t).hidden=(t!==name));
   if(name==="spots")openSpots();

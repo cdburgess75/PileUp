@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.16.012-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.013-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -178,7 +178,7 @@ Also on the Tools tab: dark/light theme (the ☀/☾ in the header toggles it to
 - The **World / Radar** and **All / Live spots / Logged** chips overlay the top of the map; switch views and layers without leaving it.
 - **Hollow rings are live spots, colored by band; green dots are your logged contacts; the amber dot is you.**
 - **Pinch to zoom, drag to pan, double-tap to zoom in** (mouse wheel and double-click on desktop). The **⟲** button returns to the home view.
-- **Tap any marker** for its callsign, reference, distance, bearing, and date. The bottom nav stays visible — tap another tab to leave.
+- **Tap any marker** for a full preview — frequency, band, callsign, mode, park/summit reference and name, distance, bearing, age, and comments — with a **＋ Log** button to log it straight from the map. Tap the background or ✕ to dismiss. The bottom nav stays visible — tap another tab to leave.
 
 Everything works **offline** and stays **on your device** — no account, and nothing leaves your phone except the spot-feed requests.
 
