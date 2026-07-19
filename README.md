@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.16.009-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.010-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -114,13 +114,14 @@ Inside `index.html`, the script section is organized as: constants and reference
 
 ### As an operator (no install)
 
-Open **<https://cdburgess75.github.io/PileUp/>** — that's it. To pin it as an app:
+Open **<https://cdburgess75.github.io/PileUp/>** — that's it. You don't have to install anything; installing just adds a home-screen icon, offline use, and fullscreen. To pin it as an app:
 
 | Platform | Steps |
 |---|---|
-| iOS / iPadOS | Safari → Share → **Add to Home Screen** |
-| Android | Chrome → ⋮ → **Add to Home Screen** |
-| Desktop | Chrome / Edge → install icon in the address bar |
+| Android / desktop | Tap the **Install** button PileUp shows (or the browser's install icon) — one tap |
+| iOS / iPadOS | Safari → **Share** → **Add to Home Screen** (Apple allows no one-tap install) |
+
+There's also a **QR code** on the Tools → Share card — point another operator's phone at it to open PileUp instantly.
 
 ### As a developer
 
