@@ -40,12 +40,12 @@
     --red:#e8635a;
     --ink:#f4f4f6;--ink-dim:#9aa8c2;
     /* LED clock faces — vivid on black; darker readable variants in light mode */
-    --clk-green:#4be08a;--clk-blue:#38cfff;
+    --clk-zulu:#ffb020;--clk-blue:#38cfff;
     --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Roboto Mono",monospace;
     --header-bg:linear-gradient(180deg,#0b2016 0%,#000000 62%);
   }
   .brand h1{text-shadow:0 0 14px rgba(var(--glow),.9),0 0 32px rgba(var(--glow),.5),0 0 64px rgba(var(--glow),.25);}
-  .clock .val{text-shadow:0 0 12px rgba(75,224,138,.9),0 0 28px rgba(75,224,138,.5);}
+  .clock .val{text-shadow:0 0 12px rgba(255,176,32,.9),0 0 28px rgba(255,176,32,.5);}
   .clock.local .val{text-shadow:0 0 12px rgba(56,207,255,.9),0 0 28px rgba(56,207,255,.5);}
   .ident-call{text-shadow:0 0 10px rgba(var(--glow),.75),0 0 22px rgba(var(--glow),.35);}
   .ident-grid{text-shadow:0 0 10px rgba(139,180,232,.75),0 0 22px rgba(139,180,232,.35);}
@@ -58,7 +58,7 @@
     --blue:#1f5fb0;--blue-dim:#9cc0e8;
     --red:#C83430;
     --ink:#12202f;--ink-dim:#3a4655;
-    --clk-green:#1c8a55;--clk-blue:#0e7e9c;
+    --clk-zulu:#a9640a;--clk-blue:#0e7e9c;
     --header-bg:linear-gradient(180deg,#e9f2ec,#FFFFFF);
   }
   [data-theme="light"] body{background-image:none;}
@@ -101,7 +101,7 @@
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
   .clock{display:flex;flex-direction:column;gap:1px;}
   .clock .lbl{font-size:8.5px;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;}
-  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--clk-green);}
+  .clock .val{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em;line-height:1;color:var(--clk-zulu);}
   .clock.local .val{color:var(--clk-blue);}
   .ident{display:flex;gap:14px;align-items:baseline;margin-top:4px;min-height:14px;}
   .ident-call{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--amber);}
@@ -696,7 +696,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.015";
+const VERSION="2026.07.16.016";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1363,8 +1363,8 @@ function applyMapZoom(){
   // so the pinch has real range in both directions.
   const a=rect.width>0?rect.height/rect.width:H/W;
   const homeK=Math.max(1,(W*a)/H);
-  _mz.minK=Math.min(1,homeK);
-  _mz.maxK=Math.max(16,homeK*4);
+  _mz.minK=Math.min(1,homeK)*0.6;    // zoom out past the whole map, with margin
+  _mz.maxK=Math.max(60,homeK*12);    // and deep in
   if(!_mz.init){
     // Open centered on the operator's QTH. Pick a zoom whose height keeps the
     // QTH vertically centered within the map (a regional view); radar opens on
