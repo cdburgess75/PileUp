@@ -161,19 +161,19 @@
     font-size:12px;letter-spacing:.06em;padding:7px 13px;border-radius:20px;cursor:pointer;
     flex-shrink:0;white-space:nowrap;}
   .chip.on{color:#fff;background:var(--amber);border-color:var(--amber);font-weight:700;}
-  .bchip{background:transparent;border:1px solid var(--bc,var(--line));color:var(--bc,var(--ink-dim));
-    font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;padding:6px 12px;
-    border-radius:20px;cursor:pointer;transition:.15s;flex-shrink:0;}
-  .bchip.on{border-width:1.5px;font-weight:700;
-    text-shadow:0 0 8px var(--bc,var(--amber));box-shadow:0 0 10px var(--bc,var(--amber));}
-  /* The neon band colors are tuned for black; on white they wash out (17 m /
-     20 m especially). Mix them toward ink — 42% band color keeps every band
-     at or above 4.5:1 contrast while the hue stays recognizable. */
-  [data-theme="light"] .bchip{background:var(--panel);
-    color:color-mix(in srgb,var(--bc,var(--ink-dim)) 42%,#12202f);
-    border-color:color-mix(in srgb,var(--bc,var(--line)) 55%,#5a6572);}
-  [data-theme="light"] .bchip.on{background:var(--bc,var(--amber));color:#000;text-shadow:none;box-shadow:none;
-    border-color:color-mix(in srgb,var(--bc,var(--line)) 55%,#5a6572);}
+  /* Band filter chips: solid band-colored pills matching the spot-row pills,
+     with a contrast-picked label. Dimmed until selected; several can be on at
+     once. "All bands" (.ab) is a neutral chip that turns amber when active. */
+  .bchip{background:var(--bc,var(--panel2));color:var(--bt,var(--ink));border:none;
+    font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.08em;padding:6px 13px;
+    border-radius:20px;cursor:pointer;transition:.15s;flex-shrink:0;opacity:.4;}
+  .bchip.on{opacity:1;box-shadow:0 0 10px color-mix(in srgb,var(--bc,var(--amber)) 70%,transparent);}
+  .bchip.ab{background:var(--panel2);color:var(--ink-dim);opacity:1;}
+  .bchip.ab.on{background:var(--amber);color:#fff;box-shadow:none;}
+  [data-theme="light"] .bchip{opacity:.5;}
+  [data-theme="light"] .bchip.on{opacity:1;box-shadow:none;}
+  [data-theme="light"] .bchip.ab{background:var(--panel);border:1px solid var(--line);}
+  [data-theme="light"] .bchip.ab.on{border-color:var(--amber);}
 
   .ctrl{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 11px;}
   input[type=text],input[type=search],input[type=number],select,textarea{
@@ -627,7 +627,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.008";
+const VERSION="2026.07.16.009";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -664,7 +664,12 @@ let GEO=loadJSON(K.geo,{lat:30.61,lng:-90.36,label:""});
 let PREFS=loadJSON(K.prefs,{call:"",theme:"",zoom:1,hr24:true,spotBand:"all",spotMode:"all",spotSort:"freq"});
 let LOG=loadJSON(K.log,[]);
 let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0})};
-let spotProg="pota",spotMode=PREFS.spotMode||"all",spotBand=PREFS.spotBand||"all",spotStatus="";
+let spotProg="pota",spotMode=PREFS.spotMode||"all",spotStatus="";
+// Multi-select band filter: a Set of band labels, empty = all bands. Migrates
+// from the old single-band `spotBand` pref.
+let spotBands=new Set(Array.isArray(PREFS.spotBands)?PREFS.spotBands
+  :(PREFS.spotBand&&PREFS.spotBand!=="all"?[PREFS.spotBand]:[]));
+function saveBands(){PREFS.spotBands=[...spotBands];saveJSON(K.prefs,PREFS);}
 let editIdx=-1;
 let spotSort=PREFS.spotSort||"freq";
 let logProg=PREFS.logProg||"all";
@@ -872,17 +877,19 @@ function renderBandChips(){
   const bands=[...new Set(raw.map(s=>hamBandOf(s.freq)).filter(Boolean))];
   bands.sort((a,b)=>parseFloat(a)-parseFloat(b));
   if(!bands.length){el.innerHTML="";return;}
-  const items=[{key:"all",label:"All bands",color:null},
-    ...bands.map(b=>({key:b,label:b,color:BAND_COLOR[b]||null}))];
-  el.innerHTML=items.map(({key,label,color})=>{
-    const on=key===spotBand,st=color?'style="--bc:'+color+'"':'';
-    return'<span class="bchip'+(on?' on':'')+'" data-sb="'+key+'" '+st+'>'+label+'</span>';
-  }).join("");
+  let html='<span class="bchip ab'+(spotBands.size===0?' on':'')+'" data-sb="all">All bands</span>';
+  html+=bands.map(b=>{const c=BAND_COLOR[b];
+    const st=c?'style="--bc:'+c+';--bt:'+bandInk(c)+'"':'';
+    return'<span class="bchip'+(spotBands.has(b)?' on':'')+'" data-sb="'+attr(b)+'" '+st+'>'+esc(b)+'</span>';}).join("");
+  el.innerHTML=html;
 }
+// Multi-select: "All bands" clears the set; a band toggles in/out. Empty = all.
 document.getElementById("spotBandChips").addEventListener("click",ev=>{
   const c=ev.target.closest("[data-sb]");if(!c)return;
-  spotBand=c.dataset.sb;PREFS.spotBand=spotBand;saveJSON(K.prefs,PREFS);
-  renderBandChips();renderSpots();
+  const b=c.dataset.sb;
+  if(b==="all")spotBands.clear();
+  else spotBands.has(b)?spotBands.delete(b):spotBands.add(b);
+  saveBands();renderBandChips();renderSpots();
 });
 function renderSpots(){
   const prog=spotProg,PROG=prog.toUpperCase(),pack=SPOTS[prog]||{list:[],ts:0};
@@ -893,7 +900,7 @@ function renderSpots(){
     if(spotMode==="cw"&&s.mode!=="CW")return false;
     if(spotMode==="ssb"&&!/SSB|USB|LSB|PHONE/.test(s.mode))return false;
     if(spotMode==="data"&&!/FT8|FT4|DATA|RTTY|JS8|DIG|PSK|JT/.test(s.mode))return false;
-    if(spotBand!=="all"&&hamBandOf(s.freq)!==spotBand)return false;
+    if(spotBands.size&&!spotBands.has(hamBandOf(s.freq)))return false;
     if(f&&!(s.call+" "+s.ref+" "+s.name+" "+s.loc+" "+s.mode).toLowerCase().includes(f))return false;
     return true;
   }).sort((a,b)=>spotSort==="age"?+new Date(b.when)-+new Date(a.when):a.freq-b.freq);
@@ -1469,7 +1476,7 @@ document.querySelectorAll(".bnav-btn[data-tab]").forEach(b=>b.addEventListener("
 document.querySelectorAll(".snav-btn[data-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
 
 document.querySelectorAll("#seg-spots button").forEach(b=>b.addEventListener("click",()=>{
-  spotProg=b.dataset.sub;spotBand="all";PREFS.spotBand="all";saveJSON(K.prefs,PREFS);
+  spotProg=b.dataset.sub;spotBands.clear();saveBands();
   document.querySelectorAll("#seg-spots button").forEach(x=>x.classList.toggle("on",x===b));
   openSpots(true);}));
 document.querySelectorAll("#seg-log button").forEach(b=>b.addEventListener("click",()=>{
