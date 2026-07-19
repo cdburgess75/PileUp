@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.015
+
+**Changed**
+- The world map now opens **centered on your QTH** (a regional view with you in
+  the middle) instead of a fixed fill
+- Pinch is far more flexible: you can zoom **out** all the way to the whole
+  globe (previously the fill zoom was the floor) and **in** much closer.
+  Zoomed-out ocean fills the margins, and the ⟲ button recenters on you
+
 ## 2026.07.16.014
 
 **Changed**
