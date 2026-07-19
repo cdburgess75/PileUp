@@ -30,8 +30,11 @@
 <meta name="twitter:image" content="https://cdburgess75.github.io/PileUp/icons/og-image.png">
 <style>
   :root{
-    --bg:#000000;--nav-bg:#080808;--panel:#0e0e0e;--panel2:#181818;--line:#282828;
-    --amber:#f0923c;--amber-dim:#c9772a;
+    --bg:#000000;--nav-bg:#080808;--panel:#0e0e0e;--panel2:#181818;--line:#24302a;
+    /* Forest-green accent (matches the app icon). --amber is the readable text
+       accent; --fill is the deep icon green for solid buttons/pills; --glow is
+       its glow; --qth stays warm so "you" reads distinctly on the map. */
+    --amber:#3aa860;--amber-dim:#1f7a45;--fill:#1b6b3a;--qth:#f0923c;--glow:58,168,96;
     --green:#AED8CA;--green-dim:#2E8B7A;
     --blue:#8bb4e8;--blue-dim:#5a8fd0;
     --red:#e8635a;
@@ -39,24 +42,24 @@
     /* LED clock faces — vivid on black; darker readable variants in light mode */
     --clk-green:#4be08a;--clk-blue:#38cfff;
     --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Roboto Mono",monospace;
-    --header-bg:#000000;
+    --header-bg:linear-gradient(180deg,#0b2016 0%,#000000 62%);
   }
-  .brand h1{text-shadow:0 0 14px rgba(240,146,60,.9),0 0 32px rgba(240,146,60,.5),0 0 64px rgba(240,146,60,.25);}
+  .brand h1{text-shadow:0 0 14px rgba(var(--glow),.9),0 0 32px rgba(var(--glow),.5),0 0 64px rgba(var(--glow),.25);}
   .clock .val{text-shadow:0 0 12px rgba(75,224,138,.9),0 0 28px rgba(75,224,138,.5);}
   .clock.local .val{text-shadow:0 0 12px rgba(56,207,255,.9),0 0 28px rgba(56,207,255,.5);}
-  .ident-call{text-shadow:0 0 10px rgba(240,146,60,.75),0 0 22px rgba(240,146,60,.35);}
+  .ident-call{text-shadow:0 0 10px rgba(var(--glow),.75),0 0 22px rgba(var(--glow),.35);}
   .ident-grid{text-shadow:0 0 10px rgba(139,180,232,.75),0 0 22px rgba(139,180,232,.35);}
   .netdot.on{box-shadow:0 0 8px var(--green),0 0 16px rgba(174,216,202,.5);}
 
   [data-theme="light"]{
-    --bg:#F9FBFF;--nav-bg:#F7F7F7;--panel:#FFFFFF;--panel2:#F7F7F7;--line:#E4E4E4;
-    --amber:#c8600f;--amber-dim:#e0872f;
+    --bg:#F9FBFF;--nav-bg:#F7F7F7;--panel:#FFFFFF;--panel2:#F7F7F7;--line:#d7e5da;
+    --amber:#17643a;--amber-dim:#2e8b57;--fill:#1b6b3a;--qth:#c8600f;
     --green:#2E8B7A;--green-dim:#AED8CA;
     --blue:#1f5fb0;--blue-dim:#9cc0e8;
     --red:#C83430;
     --ink:#12202f;--ink-dim:#3a4655;
     --clk-green:#1c8a55;--clk-blue:#0e7e9c;
-    --header-bg:linear-gradient(180deg,#F7F7F7,#FFFFFF);
+    --header-bg:linear-gradient(180deg,#e9f2ec,#FFFFFF);
   }
   [data-theme="light"] body{background-image:none;}
   [data-theme="light"] .brand h1,
@@ -74,7 +77,7 @@
 
   header{position:sticky;top:0;z-index:30;margin:0 -14px 12px;padding:14px 16px 10px;
     padding-top:max(14px,env(safe-area-inset-top));
-    background:var(--header-bg);border-bottom:1px solid var(--line);
+    background:var(--header-bg);border-bottom:1px solid var(--fill);
     box-shadow:0 6px 18px rgba(0,0,0,.5);}
   /* Right padding reserves room for the absolutely-positioned theme glyph so
      the tagline never runs into it. */
@@ -136,8 +139,8 @@
       font-family:var(--mono);font-size:7px;letter-spacing:.1em;text-transform:uppercase;
       cursor:pointer;border-radius:8px;margin:0 7px;width:calc(100% - 14px);transition:.15s;}
     .snav-btn .bicon{font-size:15px;line-height:1;}
-    .snav-btn.on{color:var(--amber);background:rgba(240,146,60,.12);}
-    .snav-btn.on .bicon{text-shadow:0 0 10px rgba(240,146,60,.6);}
+    .snav-btn.on{color:var(--amber);background:rgba(var(--glow),.12);}
+    .snav-btn.on .bicon{text-shadow:0 0 10px rgba(var(--glow),.6);}
     .wrap{max-width:760px;margin:0;flex:1;min-width:0;padding-bottom:20px;}
     .bottomnav{display:none;}
   }
@@ -152,7 +155,7 @@
   .seg button{flex:1;background:transparent;border:1px solid var(--line);color:var(--ink-dim);
     font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.1em;padding:10px 4px;border-radius:6px;
     cursor:pointer;text-transform:uppercase;}
-  .seg button.on{color:var(--green);border-color:var(--green-dim);background:rgba(174,216,202,.08);}
+  .seg button.on{color:#fff;border-color:var(--fill);background:var(--fill);}
 
   .chips{display:flex;gap:6px;margin:0 0 11px;flex-wrap:nowrap;overflow-x:auto;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
@@ -160,7 +163,7 @@
   .chip{background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);font-family:var(--mono);
     font-size:12px;letter-spacing:.06em;padding:7px 13px;border-radius:20px;cursor:pointer;
     flex-shrink:0;white-space:nowrap;}
-  .chip.on{color:#fff;background:var(--amber);border-color:var(--amber);font-weight:700;}
+  .chip.on{color:#fff;background:var(--fill);border-color:var(--fill);font-weight:700;}
   /* Band filter chips: solid band-colored pills matching the spot-row pills,
      with a contrast-picked label. Dimmed until selected; several can be on at
      once. "All bands" (.ab) is a neutral chip that turns amber when active. */
@@ -169,23 +172,23 @@
     border-radius:20px;cursor:pointer;transition:.15s;flex-shrink:0;opacity:.4;}
   .bchip.on{opacity:1;box-shadow:0 0 10px color-mix(in srgb,var(--bc,var(--amber)) 70%,transparent);}
   .bchip.ab{background:var(--panel2);color:var(--ink-dim);opacity:1;}
-  .bchip.ab.on{background:var(--amber);color:#fff;box-shadow:none;}
+  .bchip.ab.on{background:var(--fill);color:#fff;box-shadow:none;}
   [data-theme="light"] .bchip{opacity:.5;}
   [data-theme="light"] .bchip.on{opacity:1;box-shadow:none;}
   [data-theme="light"] .bchip.ab{background:var(--panel);border:1px solid var(--line);}
-  [data-theme="light"] .bchip.ab.on{border-color:var(--amber);}
+  [data-theme="light"] .bchip.ab.on{background:var(--fill);color:#fff;border-color:var(--fill);}
 
   .ctrl{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 11px;}
   input[type=text],input[type=search],input[type=number],select,textarea{
     background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);
     font-size:16px;padding:10px 12px;border-radius:8px;outline:none;flex:1;min-width:0;}
-  input:focus,select:focus,textarea:focus{border-color:var(--amber-dim);box-shadow:0 0 0 2px rgba(240,146,60,.2);}
+  input:focus,select:focus,textarea:focus{border-color:var(--amber-dim);box-shadow:0 0 0 2px rgba(var(--glow),.2);}
   textarea{width:100%;resize:vertical;min-height:54px;}
   .hint{font-size:10.5px;color:var(--ink-dim);line-height:1.6;letter-spacing:.03em;}
   .count{font-size:11.5px;letter-spacing:.12em;color:var(--ink-dim);text-transform:uppercase;margin:4px 2px 9px;}
   .count b{color:var(--amber);}
 
-  .btn{display:inline-block;background:var(--amber);color:#fff;border:none;font-family:var(--mono);
+  .btn{display:inline-block;background:var(--fill);color:#fff;border:none;font-family:var(--mono);
     font-weight:700;font-size:12px;letter-spacing:.1em;padding:11px 15px;border-radius:8px;
     cursor:pointer;text-transform:uppercase;}
   .btn.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);font-weight:500;}
@@ -265,7 +268,7 @@
   .act.log{font-size:10.5px;letter-spacing:.1em;border:1px solid var(--amber-dim);border-radius:5px;
     padding:4px 8px;text-transform:uppercase;color:var(--amber);font-weight:700;}
 
-  .nav-badge{display:inline-block;background:var(--amber);color:#fff;font-size:6.5px;font-weight:700;
+  .nav-badge{display:inline-block;background:var(--fill);color:#fff;font-size:6.5px;font-weight:700;
     min-width:13px;height:13px;border-radius:7px;text-align:center;line-height:13px;
     padding:0 3px;margin-left:3px;vertical-align:middle;}
   .nav-badge:empty{display:none;}
@@ -290,8 +293,8 @@
   .mapkm{fill:var(--ink-dim);font-family:var(--mono);font-size:8px;opacity:.8;}
   .mdot-spot{fill:none;stroke:var(--amber);stroke-width:1.6;cursor:pointer;}
   .mdot-log{fill:var(--green);stroke:var(--bg);stroke-width:1;cursor:pointer;}
-  .mdot-qth{fill:var(--amber);}
-  .mqth-pulse{fill:none;stroke:var(--amber);stroke-width:1;opacity:.5;}
+  .mdot-qth{fill:var(--qth);}
+  .mqth-pulse{fill:none;stroke:var(--qth);stroke-width:1;opacity:.5;}
   #mapSvg{touch-action:pan-y;}          /* page still scrolls at 1×… */
   #mapSvg.zoomed{touch-action:none;}    /* …one finger pans the map when zoomed */
   /* Fullscreen has no page to scroll, so hand every gesture to the map —
@@ -353,7 +356,7 @@
   .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
   .mk-spot{border:1.6px solid var(--amber);}
   .mk-log{background:var(--green);}
-  .mk-qth{background:var(--amber);}
+  .mk-qth{background:var(--qth);}
 
   .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
   .stile{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 6px;text-align:center;}
@@ -393,7 +396,7 @@
     box-shadow:0 -10px 30px rgba(0,0,0,.6);}
   .sheet h3{margin:0 0 12px;font-size:12px;letter-spacing:.18em;color:var(--amber);text-transform:uppercase;}
 
-  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--amber);color:#fff;
+  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--fill);color:#fff;
     font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 16px;border-radius:20px;z-index:80;
     opacity:0;transition:.25s;pointer-events:none;text-transform:uppercase;}
   .toast.show{opacity:1;}
@@ -414,9 +417,9 @@
   .upbanner.show{transform:translate(-50%,0);}
   @media(min-width:860px){.upbanner{bottom:24px;}}
   .upbanner .up-msg{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink);text-transform:uppercase;}
-  .upbanner .up-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;
+  .upbanner .up-dot{width:7px;height:7px;border-radius:50%;background:var(--fill);flex-shrink:0;
     animation:updot 1.2s ease-in-out infinite;}
-  @keyframes updot{0%,100%{box-shadow:0 0 0 0 rgba(240,146,60,.55);}50%{box-shadow:0 0 0 5px rgba(240,146,60,0);}}
+  @keyframes updot{0%,100%{box-shadow:0 0 0 0 rgba(var(--glow),.55);}50%{box-shadow:0 0 0 5px rgba(var(--glow),0);}}
   .upbanner .up-close{background:none;border:none;color:var(--ink-dim);font-size:12px;cursor:pointer;
     padding:4px 5px;line-height:1;}
   /* Install banner: same slot/animation as the update banner, but its message
@@ -693,7 +696,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.013";
+const VERSION="2026.07.16.014";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],

@@ -7,6 +7,19 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.014
+
+**Changed**
+- Forest-green accent to match the app icon (`#1b6b3a`). Buttons, the program
+  switch, active mode/band chips, and badges fill with the deep icon green
+  (white text); the wordmark, frequencies, and other accents use a lighter
+  same-family green; the header gets a subtle green wash and divider, and
+  borders are faintly green-tinted. Applies to dark and light themes. The map
+  "you" (QTH) marker stays warm so it reads distinctly
+
+**Fixed**
+- The active "All bands" chip was white-on-white (invisible) in light mode
+
 ## 2026.07.16.013
 
 **Added**
