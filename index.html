@@ -527,7 +527,7 @@
           <span class="chip" data-ml="log">Logged</span>
         </div>
       </div>
-      <button class="map-reset" id="mapReset" hidden aria-label="Reset zoom">⟲ 1×</button>
+      <button class="map-reset" id="mapReset" hidden aria-label="Recenter on your location">⟲</button>
       <div class="map-ctl-bot">
         <div class="maplegend">
           <span><span class="mkey mk-spot"></span> live spot</span>
@@ -696,7 +696,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.014";
+const VERSION="2026.07.16.015";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1286,7 +1286,7 @@ function dotLabel(p,km){
 function renderWorld(el,pts){
   const X=lng=>(lng+180)*2,Y=lat=>(90-lat)*2;
   let svg='<svg viewBox="0 0 720 360" preserveAspectRatio="xMidYMid slice" role="img" aria-label="World map of spots and logged contacts">';
-  svg+='<rect class="mapocean" x="-40" y="-40" width="800" height="440"/>';
+  svg+='<rect class="mapocean" x="-720" y="-720" width="2160" height="1800"/>';
   for(let x=120;x<720;x+=120)svg+='<line class="mapgrat" x1="'+x+'" y1="0" x2="'+x+'" y2="360"/>';
   for(let y=60;y<360;y+=60)svg+='<line class="mapgrat" x1="0" y1="'+y+'" x2="720" y2="'+y+'"/>';
   svg+='<path class="mapland" d="'+WORLD_PATH+'"/>';
@@ -1352,46 +1352,55 @@ function renderMap(){
 /* --- map zoom & pan: pinch, one-finger pan when zoomed, wheel, double-tap.
    Implemented purely by moving the SVG viewBox; markers re-scale so they
    stay finger-sized instead of ballooning. --- */
-let _mz={k:1,x:0,y:0,init:false,minK:1};
+let _mz={k:0,x:0,y:0,init:false,minK:1,maxK:16,moved:false};
 function mapBase(){return mapView==="world"?[720,360]:[400,400];}
 function applyMapZoom(){
   const el=document.getElementById("mapSvg"),svg=el&&el.querySelector("svg");
   if(!svg)return;
   const[W,H]=mapBase(),rect=el.getBoundingClientRect();
-  // Match the viewBox aspect to the container so the map fills it edge to
-  // edge; minK is the widest zoom that still leaves no letterboxing.
+  // The viewBox aspect always matches the container (no crop). homeK exactly
+  // fills the box; you can zoom OUT to the whole map (minK) and well IN (maxK),
+  // so the pinch has real range in both directions.
   const a=rect.width>0?rect.height/rect.width:H/W;
-  _mz.minK=Math.max(1,(W*a)/H);
+  const homeK=Math.max(1,(W*a)/H);
+  _mz.minK=Math.min(1,homeK);
+  _mz.maxK=Math.max(16,homeK*4);
   if(!_mz.init){
-    // First show: home view — as zoomed-out as fills the box, centered on QTH.
-    _mz.init=true;_mz.k=_mz.minK;
-    const w0=W/_mz.k,h0=Math.min(H,w0*a);
-    const qx=mapView==="world"?(GEO.lng+180)*2:200,
-          qy=mapView==="world"?(90-GEO.lat)*2:200;
+    // Open centered on the operator's QTH. Pick a zoom whose height keeps the
+    // QTH vertically centered within the map (a regional view); radar opens on
+    // the full circle. Zoom out to the globe or in close from here.
+    _mz.init=true;
+    const qx=mapView==="world"?(isFinite(GEO.lng)?(GEO.lng+180)*2:360):200,
+          qy=mapView==="world"?(isFinite(GEO.lat)?(90-GEO.lat)*2:180):200;
+    if(mapView==="world"){
+      const hDef=Math.max(180,Math.min(H,2*Math.min(qy,H-qy)));
+      _mz.k=Math.max(_mz.minK,Math.min(_mz.maxK,(W*a)/hDef));
+    }else _mz.k=_mz.minK;
+    const w0=W/_mz.k,h0=w0*a;
     _mz.x=qx-w0/2;_mz.y=qy-h0/2;
   }
-  const k=Math.min(12,Math.max(_mz.minK,_mz.k));_mz.k=k;
-  const w=W/k,h=Math.min(H,w*a);
-  _mz.x=Math.min(Math.max(_mz.x,0),W-w);
-  _mz.y=Math.min(Math.max(_mz.y,0),Math.max(0,H-h));
+  const k=Math.min(_mz.maxK,Math.max(_mz.minK,_mz.k));_mz.k=k;
+  const w=W/k,h=w*a;
+  // Center the viewBox when it's larger than the map; otherwise clamp panning.
+  _mz.x=w>=W?(W-w)/2:Math.min(Math.max(_mz.x,0),W-w);
+  _mz.y=h>=H?(H-h)/2:Math.min(Math.max(_mz.y,0),H-h);
   svg.setAttribute("viewBox",_mz.x.toFixed(2)+" "+_mz.y.toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2));
   svg.style.setProperty("--zk",k);
   svg.querySelectorAll("circle").forEach(c=>{
     if(!c.dataset.br)c.dataset.br=c.getAttribute("r");
     c.setAttribute("r",(+c.dataset.br/k).toFixed(2));});
-  const home=k<=_mz.minK*1.02;
-  el.classList.toggle("zoomed",!home);
-  document.getElementById("mapReset").hidden=home;
+  el.classList.toggle("zoomed",k>_mz.minK+0.02);
+  const rb=document.getElementById("mapReset");if(rb)rb.hidden=!_mz.moved;
 }
-function mapHome(){_mz={k:1,x:0,y:0,init:false,minK:1};applyMapZoom();}
+function mapHome(){_mz={k:0,x:0,y:0,init:false,minK:1,maxK:16,moved:false};applyMapZoom();}
 function mapClientToSvg(cx,cy){
   const svg=document.querySelector("#mapSvg svg"),r=svg.getBoundingClientRect();
   const[W]=mapBase(),w=W/_mz.k;
   return[_mz.x+(cx-r.left)*w/r.width,_mz.y+(cy-r.top)*w/r.width];}
 function mapZoomAt(px,py,factor){
-  const nk=Math.min(12,Math.max(_mz.minK||1,_mz.k*factor));
+  const nk=Math.min(_mz.maxK||16,Math.max(_mz.minK||1,_mz.k*factor));
   _mz.x=px-(px-_mz.x)*(_mz.k/nk);_mz.y=py-(py-_mz.y)*(_mz.k/nk);
-  _mz.k=nk;applyMapZoom();}
+  _mz.k=nk;_mz.moved=true;applyMapZoom();}
 (function(){
   const el=document.getElementById("mapSvg"),ptrs=new Map();
   let lastDist=0,lastMid=null;
@@ -1413,7 +1422,7 @@ function mapZoomAt(px,py,factor){
         const svg=el.querySelector("svg");if(!svg)return;
         const r=svg.getBoundingClientRect(),[W]=mapBase(),scale=(W/_mz.k)/r.width;
         _mz.x-=(cur[0]-lastMid[0])*scale;_mz.y-=(cur[1]-lastMid[1])*scale;
-        applyMapZoom();}
+        _mz.moved=true;applyMapZoom();}
       lastMid=cur;e.preventDefault();
     }});
   const up=e=>{ptrs.delete(e.pointerId);lastDist=0;lastMid=null;};
@@ -1423,7 +1432,7 @@ function mapZoomAt(px,py,factor){
     mapZoomAt(px,py,e.deltaY<0?1.2:1/1.2);},{passive:false});
   el.addEventListener("dblclick",e=>{e.preventDefault();
     const[px,py]=mapClientToSvg(e.clientX,e.clientY);
-    if(_mz.k>=8)mapHome();else mapZoomAt(px,py,2);});
+    if(_mz.k>=_mz.maxK*0.55)mapHome();else mapZoomAt(px,py,1.9);});
   document.getElementById("mapReset").addEventListener("click",mapHome);
 })();
 // Full-screen map: expand the map card to fill the viewport (CSS overlay) and
@@ -1450,7 +1459,7 @@ document.getElementById("mapChips").addEventListener("click",ev=>{
 document.getElementById("mapViewChips").addEventListener("click",ev=>{
   const c=ev.target.closest("[data-mv]");if(!c)return;
   mapView=c.dataset.mv;PREFS.mapView=mapView;saveJSON(K.prefs,PREFS);
-  _mz={k:1,x:0,y:0,init:false,minK:1};
+  _mz={k:0,x:0,y:0,init:false,minK:1,maxK:16,moved:false};
   document.querySelectorAll("#mapViewChips .chip").forEach(x=>x.classList.toggle("on",x===c));
   renderMap();});
 document.querySelectorAll("#mapViewChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.mv===mapView));
