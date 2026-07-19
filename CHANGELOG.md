@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.009
+
+**Changed**
+- Band filter chips now match the solid spot-row pills (band-colored fill,
+  contrast-picked label), dimmed until selected
+- Band filter is now **multi-select**: tap several bands to show them all
+  together; "All bands" clears the selection. Your choice persists
+
 ## 2026.07.16.008
 
 **Added**
