@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.012
+
+**Changed**
+- The Map tab is now an immersive, full-screen map by default (both World and
+  Radar). The view (World / Radar) and layer (All / Live spots / Logged) chips
+  float as pills over the map, and the legend/info sit at the bottom. The
+  bottom nav stays put so you can leave the tab. Replaces the manual ⛶
+  full-screen toggle
+
 ## 2026.07.16.011
 
 **Changed**

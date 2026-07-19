@@ -301,22 +301,33 @@
   #mapSvg svg .mapgrat{stroke-width:calc(.6px/var(--zk,1));}
   #mapSvg svg .mdot-spot{stroke-width:calc(1.6px/var(--zk,1));}
   #mapSvg svg .mapring{stroke-width:calc(1px/var(--zk,1));}
-  .map-reset{position:absolute;top:16px;right:16px;z-index:5;background:var(--panel2);
-    border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
+  .map-reset{position:absolute;right:16px;top:max(16px,calc(env(safe-area-inset-top) + 8px));z-index:7;
+    background:var(--panel2);border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
     font-size:11px;font-weight:700;letter-spacing:.06em;padding:6px 10px;border-radius:8px;
     cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4);}
-  .map-fs-btn{position:absolute;top:16px;left:16px;z-index:5;background:var(--panel2);
-    border:1px solid var(--amber-dim);color:var(--amber);font-family:var(--mono);
-    font-size:15px;line-height:1;padding:5px 9px;border-radius:8px;cursor:pointer;
-    box-shadow:0 3px 10px rgba(0,0,0,.4);}
   #mapCard{position:relative;padding:10px;}
-  /* CSS-overlay fullscreen: fills the app viewport over the header/nav. Works
-     everywhere (incl. the installed iOS PWA, where element requestFullscreen
-     is unsupported). ID-level specificity so it beats #mapCard's own position. */
-  #mapCard.map-fs{position:fixed;inset:0;z-index:85;margin:0;border:none;border-radius:0;
-    background:var(--bg);
-    padding:max(10px,env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));}
-  #mapCard.map-fs .map-fs-btn,#mapCard.map-fs .map-reset{top:max(16px,calc(env(safe-area-inset-top) + 6px));}
+  /* The Map tab is an immersive full-bleed map (over the header, up to the
+     bottom nav which is raised above it). Works everywhere incl. the installed
+     iOS PWA. The controls float on top as overlays. */
+  #mapCard.map-fs{position:fixed;inset:0;z-index:85;margin:0;border:none;border-radius:0;padding:0;
+    background:var(--bg);display:flex;align-items:center;justify-content:center;}
+  #mapCard.map-fs #mapSvg{width:100%;}
+  body.mapopen .bottomnav{z-index:86;}
+  @media(min-width:860px){#mapCard.map-fs{left:84px;}}
+  /* Floating control clusters over the map. Containers pass touches through;
+     only the chips/buttons capture them. Scrims keep them readable. */
+  .map-ctl-top{position:absolute;top:0;left:0;right:0;z-index:6;pointer-events:none;
+    display:flex;flex-direction:column;gap:6px;
+    padding:max(12px,calc(env(safe-area-inset-top) + 8px)) 58px 24px 10px;
+    background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0));}
+  .map-ctl-top .chips{pointer-events:auto;margin:0;}
+  .map-ctl-bot{position:absolute;left:0;right:0;bottom:0;z-index:6;pointer-events:none;
+    padding:18px 10px calc(58px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0));}
+  .map-ctl-bot .maplegend{margin-top:0;}
+  [data-theme="light"] .map-ctl-top{background:linear-gradient(180deg,rgba(249,251,255,.72),rgba(249,251,255,0));}
+  [data-theme="light"] .map-ctl-bot{background:linear-gradient(0deg,rgba(249,251,255,.78),rgba(249,251,255,0));}
+  @media(min-width:860px){.map-ctl-bot{padding-bottom:16px;}}
   .maplegend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:9.5px;
     color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
   .mkey{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:4px;}
@@ -480,30 +491,29 @@
 
   <!-- ============ MAP ============ -->
   <section id="tab-map" hidden>
-    <div class="chips" id="mapViewChips">
-      <span class="chip on" data-mv="world">◐ World</span>
-      <span class="chip" data-mv="radar">⊚ Radar</span>
-    </div>
-    <div class="chips" id="mapChips" style="margin-top:-5px">
-      <span class="chip on" data-ml="both">All</span>
-      <span class="chip" data-ml="spots">Live spots</span>
-      <span class="chip" data-ml="log">Logged</span>
-    </div>
     <div class="card" id="mapCard">
       <div id="mapSvg"></div>
-      <button class="map-fs-btn" id="mapFs" aria-label="Full screen" title="Full screen">⛶</button>
-      <button class="map-reset" id="mapReset" hidden aria-label="Reset zoom">⟲ 1×</button>
-      <div class="maplegend">
-        <span><span class="mkey mk-spot"></span> live spot</span>
-        <span><span class="mkey mk-log"></span> logged QSO</span>
-        <span><span class="mkey mk-qth"></span> your QTH</span>
+      <div class="map-ctl-top">
+        <div class="chips" id="mapViewChips">
+          <span class="chip on" data-mv="world">◐ World</span>
+          <span class="chip" data-mv="radar">⊚ Radar</span>
+        </div>
+        <div class="chips" id="mapChips">
+          <span class="chip on" data-ml="both">All</span>
+          <span class="chip" data-ml="spots">Live spots</span>
+          <span class="chip" data-ml="log">Logged</span>
+        </div>
       </div>
-      <div class="hint" id="mapInfo" style="min-height:16px;margin-top:6px;text-align:center"></div>
+      <button class="map-reset" id="mapReset" hidden aria-label="Reset zoom">⟲ 1×</button>
+      <div class="map-ctl-bot">
+        <div class="maplegend">
+          <span><span class="mkey mk-spot"></span> live spot</span>
+          <span><span class="mkey mk-log"></span> logged QSO</span>
+          <span><span class="mkey mk-qth"></span> your QTH</span>
+        </div>
+        <div class="hint" id="mapInfo" style="min-height:14px;margin-top:4px;text-align:center"></div>
+      </div>
     </div>
-    <div class="hint" style="margin-top:2px">Tap <b>⛶</b> for full screen. <b>World</b> plots everything
-      geographically — pinch to zoom, drag to pan, double-tap to jump in. <b>Radar</b> is the azimuthal view
-      from your station — bearing is the direction to point your antenna. Logged contacts
-      appear once saved from a spot (coordinates are captured automatically).</div>
   </section>
 
   <!-- ============ TOOLS ============ -->
@@ -657,7 +667,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.011";
+const VERSION="2026.07.16.012";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1261,11 +1271,10 @@ function renderWorld(el,pts){
    chips above and legend/nav below; radar keeps its square. */
 function sizeMapBox(el){
   if(el.clientWidth===0)return;
-  // Fullscreen: fill from the map's top down to just above the legend/info row.
+  // Immersive: the map fills the whole viewport; controls float over it, so no
+  // height is reserved. World fills edge to edge; radar stays a centred square.
   if(document.getElementById("mapCard").classList.contains("map-fs")){
-    const top=el.getBoundingClientRect().top;
-    const avail=Math.max(220,window.innerHeight-top-70);
-    el.style.height=(mapView==="world"?avail:Math.min(el.clientWidth,avail))+"px";
+    el.style.height=(mapView==="world"?window.innerHeight:Math.min(el.clientWidth,window.innerHeight))+"px";
     return;
   }
   if(mapView==="world"){
@@ -1384,18 +1393,12 @@ function mapZoomAt(px,py,factor){
 })();
 // Full-screen map: expand the map card to fill the viewport (CSS overlay) and
 // re-fit the view for the new size. Toggled by the ⛶ button or Escape.
+// The Map tab is always the immersive full-bleed map; showTab drives this.
+// `mapopen` on <body> lifts the bottom nav above the map so it stays tappable.
 function setMapFs(on){
-  const card=document.getElementById("mapCard");
-  if(card.classList.contains("map-fs")===on)return;
-  card.classList.toggle("map-fs",on);
-  const btn=document.getElementById("mapFs");
-  btn.textContent=on?"✕":"⛶";
-  btn.setAttribute("aria-label",on?"Exit full screen":"Full screen");
-  btn.title=btn.getAttribute("aria-label");
-  renderMap();
+  document.getElementById("mapCard").classList.toggle("map-fs",on);
+  document.body.classList.toggle("mapopen",on);
 }
-document.getElementById("mapFs").addEventListener("click",()=>
-  setMapFs(!document.getElementById("mapCard").classList.contains("map-fs")));
 function renderMapInfo(pts){
   const n=pts.filter(p=>p.kind==="log").length,s=pts.length-n;
   document.getElementById("mapInfo").textContent=
@@ -1492,7 +1495,7 @@ function showTab(name){
   document.querySelectorAll(".bnav-btn[data-tab],.snav-btn[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
   ["spots","log","map","tools"].forEach(t=>document.getElementById("tab-"+t).hidden=(t!==name));
   if(name==="spots")openSpots();
-  if(name==="map")renderMap();
+  if(name==="map"){setMapFs(true);renderMap();}
 }
 
 /* ============ wire up ============ */
@@ -1533,7 +1536,7 @@ document.getElementById("lgDelete").addEventListener("click",()=>{
   if(editIdx<0)return;const entry=LOG[editIdx];if(!entry)return;
   LOG.splice(editIdx,1);saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast("Deleted");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("logModal").hidden)closeLog();});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("mapCard").classList.contains("map-fs"))setMapFs(false);});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("mapopen"))showTab("spots");});
 // Enter/Space activate the role="button" spot rows and edit/del controls.
 // Click the focused element itself so a focused ＋ logs while a focused row
 // toggles — same branching the pointer path uses.
