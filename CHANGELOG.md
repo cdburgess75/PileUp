@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.011
+
+**Changed**
+- New home-screen icon: a white pine tree with signal waves on a deep-forest
+  green tile (`#1b6b3a`), replacing the orange antenna mark. Regenerated the
+  SVG plus the 192/512/apple-touch PNGs as full-bleed squares (no corner
+  artifacts), kept maskable-safe. Already-installed users may need to remove
+  and re-add the app to see the new icon (the OS caches home-screen icons)
+
 ## 2026.07.16.010
 
 **Added**
