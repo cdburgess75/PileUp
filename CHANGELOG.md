@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.007
+
+**Changed**
+- Band pills are now solid band-colored fills with a legible number instead of
+  a hollow colored ring. The number is white on the deep bands and auto-switches
+  to dark on the bright ones (40 m yellow, 30 m, 20 m, 17 m) where white would be
+  unreadable
+
 ## 2026.07.16.006
 
 **Fixed**
