@@ -191,6 +191,7 @@
   .btn.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);font-weight:500;}
   .btn.ghost.on{color:var(--amber);border-color:var(--amber-dim);}
   .btn.sm{padding:8px 12px;font-size:10.5px;}
+  a.btn{text-decoration:none;}
   .btn:active{transform:translateY(1px);}
   .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 
@@ -548,6 +549,22 @@
         contacts merge in, duplicates are skipped, nothing is overwritten.</div>
     </div>
 
+    <div class="card" id="uploadCard">
+      <h3>◆ Upload / submit logs</h3>
+      <div class="hint" style="margin-bottom:10px">Your log lives on this device. To submit it, export an <b>ADIF</b> file
+        and upload that to the service you use. <b>POTA hunter credit is automatic</b> once the activator uploads their
+        log — you only need to submit if <b>you</b> activated a park.</div>
+      <div class="btnrow"><button class="btn sm" id="upAdifBtn">⬆ Export ADIF</button></div>
+      <div class="btnrow" style="margin-bottom:8px">
+        <a class="btn ghost sm" href="https://pota.app/" target="_blank" rel="noopener noreferrer">POTA ↗</a>
+        <a class="btn ghost sm" href="https://logbook.qrz.com/" target="_blank" rel="noopener noreferrer">QRZ ↗</a>
+        <a class="btn ghost sm" href="https://lotw.arrl.org/" target="_blank" rel="noopener noreferrer">LoTW ↗</a>
+        <a class="btn ghost sm" href="https://clublog.org/" target="_blank" rel="noopener noreferrer">Club Log ↗</a>
+      </div>
+      <div class="hint"><b>POTA</b> (activators): sign in → your callsign menu → <b>My Log Uploads</b>, then pick the .adi
+        file. <b>LoTW</b> signs your ADIF with the TQSL app. <b>QRZ</b> / <b>Club Log</b>: use their logbook import.</div>
+    </div>
+
     <div class="card" id="shareCard">
       <h3>◆ Share PileUp</h3>
       <div class="hint" style="margin-bottom:10px">Send the app to another operator.</div>
@@ -610,7 +627,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.007";
+const VERSION="2026.07.16.008";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1419,6 +1436,7 @@ function restoreFrom(text){
   }else{toast("Unrecognized file");return;}
   saveJSON(K.log,LOG);renderLog();renderSpots();renderIdent();
   toast(res.added+" added"+(res.skipped?" · "+res.skipped+" skipped":""));}
+document.getElementById("upAdifBtn").addEventListener("click",exportLogADIF);
 document.getElementById("backupBtn").addEventListener("click",backupAll);
 document.getElementById("restoreBtn").addEventListener("click",()=>document.getElementById("restoreFile").click());
 document.getElementById("restoreFile").addEventListener("change",ev=>{
