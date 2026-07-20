@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.022
+
+**Fixed**
+- Update prompt reliability: the "⬆ Update" banner now stays up until you act
+  on it (it used to auto-hide after 8 s and was easy to miss), the app fetches
+  sw.js with `updateViaCache:"none"` so a new version is detected even when the
+  CDN would serve a cached copy, and it checks for updates on load, on
+  foreground, and every 30 min
+
 ## 2026.07.16.020
 
 **Changed**

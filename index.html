@@ -720,7 +720,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.021";
+const VERSION="2026.07.16.022";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1803,13 +1803,12 @@ openSpots();
 /* ============ version + updates ============ */
 document.getElementById("verLine").textContent="PILEUP v"+VERSION;
 document.getElementById("hdrVer").textContent="v"+VERSION;
-let _upWorker=null,_upTimer=0,_reloaded=false;
+let _upWorker=null,_reloaded=false;
 function showUpBanner(worker){
+  // Stays up until the operator taps Update or ✕ — an auto-hiding banner is
+  // easy to miss, especially on iOS where it may appear while backgrounded.
   _upWorker=worker;
-  const b=document.getElementById("upBanner");
-  b.classList.add("show");
-  clearTimeout(_upTimer);
-  _upTimer=setTimeout(()=>b.classList.remove("show"),8000);
+  document.getElementById("upBanner").classList.add("show");
 }
 document.getElementById("upApply").addEventListener("click",()=>{
   document.getElementById("upBanner").classList.remove("show");
@@ -1819,19 +1818,23 @@ document.getElementById("upApply").addEventListener("click",()=>{
   setTimeout(()=>{if(!_reloaded){_reloaded=true;location.reload();}},1200);
 });
 document.getElementById("upDismiss").addEventListener("click",()=>{
-  clearTimeout(_upTimer);
   document.getElementById("upBanner").classList.remove("show");
 });
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").then(reg=>{
+  // updateViaCache:"none" — always re-fetch sw.js from the network so a new
+  // version is detected even when the CDN would serve a cached copy.
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
     const watch=w=>{if(!w)return;
       w.addEventListener("statechange",()=>{
         if(w.state==="installed"&&navigator.serviceWorker.controller)showUpBanner(w);});};
     if(reg.waiting&&navigator.serviceWorker.controller)showUpBanner(reg.waiting);
     watch(reg.installing);
     reg.addEventListener("updatefound",()=>watch(reg.installing));
-    document.addEventListener("visibilitychange",()=>{
-      if(!document.hidden)reg.update().catch(()=>{});});
+    // Check now, whenever the app comes back to the foreground, and periodically.
+    const check=()=>reg.update().catch(()=>{});
+    check();
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)check();});
+    setInterval(check,30*60*1000);
   }).catch(()=>{});
   navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(_reloaded)return;_reloaded=true;location.reload();});
