@@ -720,7 +720,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.022";
+const VERSION="2026.07.16.023";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1091,18 +1091,15 @@ async function lookupCall(){
   _lkLast=call;const seq=++_lkSeq;
   lkStatus("busy","Looking up "+esc(call)+"…");
   const base="https://api.hamdb.org/"+encodeURIComponent(call)+"/json/pileup";
+  // Race the direct call and the relays in parallel and take the first valid
+  // answer, instead of trying them one-by-one (which stacked their timeouts).
+  const attempt=url=>fetchWithTimeout(url,{cache:"no-store"},6000)
+    .then(res=>{if(!res||!res.ok)throw 0;return res.text();})
+    .then(txt=>{const h=(JSON.parse(txt)||{}).hamdb;if(!h)throw 0;
+      const ok=h.messages&&String(h.messages.status).toUpperCase()==="OK",c=h.callsign;
+      return(ok&&c&&c.call&&String(c.call).toUpperCase()!=="NOT_FOUND")?c:null;});
   let rec=null;
-  for(const url of relays(base)){
-    try{const res=await fetchWithTimeout(url,{cache:"no-store"},8000);
-      if(!res||!res.ok)continue;
-      const h=(JSON.parse(await res.text())||{}).hamdb;
-      if(!h)continue;
-      const ok=h.messages&&String(h.messages.status).toUpperCase()==="OK";
-      const c=h.callsign;
-      if(ok&&c&&c.call&&String(c.call).toUpperCase()!=="NOT_FOUND"){rec=c;}
-      break;                                     // valid response — found or not, stop trying relays
-    }catch(e){}
-  }
+  try{rec=await Promise.any(relays(base).map(attempt));}catch(e){rec=null;}
   if(seq!==_lkSeq)return;                         // a newer lookup superseded this one
   if(!rec){lkStatus("","No record found for "+esc(call)+".");return;}
   const opname=[rec.fname,rec.name].map(s=>(s||"").trim()).filter(Boolean).join(" ").replace(/\s+/g," ");

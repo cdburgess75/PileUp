@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.023
+
+**Changed**
+- Callsign lookup is much faster: it now queries the direct HamDB endpoint and
+  the relays **in parallel** and takes the first valid answer, instead of trying
+  them one at a time (which could stack timeouts to ~24 s on a slow network).
+  Per-attempt timeout trimmed to 6 s
+
 ## 2026.07.16.022
 
 **Fixed**
