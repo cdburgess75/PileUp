@@ -65,8 +65,8 @@
   [data-theme="light"] body{background-image:none;}
   [data-theme="light"] .brand h1,
   [data-theme="light"] .clock .val,
-  [data-theme="light"] .ident-call,
-  [data-theme="light"] .ident-grid,
+  [data-theme="light"] .hdrcall,
+  [data-theme="light"] .hdr-grid,
   [data-theme="light"] .netdot.on{text-shadow:none;box-shadow:none;}
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -76,8 +76,8 @@
     padding-bottom:env(safe-area-inset-bottom);}
   .wrap{max-width:760px;margin:0 auto;padding:0 14px 96px;}
 
-  header{position:sticky;top:0;z-index:30;margin:0 -14px 12px;padding:14px 16px 10px;
-    padding-top:max(14px,env(safe-area-inset-top));
+  header{position:sticky;top:0;z-index:30;margin:0 -14px 10px;padding:12px 16px 8px;
+    padding-top:max(12px,env(safe-area-inset-top));
     background:var(--header-bg);border-bottom:1px solid var(--fill);
     box-shadow:0 6px 18px rgba(0,0,0,.5);}
   /* Right padding reserves room for the absolutely-positioned theme glyph so
@@ -87,6 +87,10 @@
   .brand .sub{font-size:9.5px;letter-spacing:.28em;color:var(--ink-dim);text-transform:uppercase;}
   .brandcol{display:flex;flex-direction:column;gap:3px;}
   .brandcol h1{line-height:1;}
+  .brandline{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;line-height:1;}
+  .hdrcall{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--amber);
+    text-shadow:0 0 8px rgba(var(--glow),.6);}
+  .hdrcall:empty{display:none;}
   .hdrver{font-size:8px;letter-spacing:.14em;color:var(--amber-dim);line-height:1;white-space:nowrap;}
   .hdr-controls{display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;}
   .tgl-btn{background:none;border:1px solid var(--line);color:var(--ink-dim);font-family:var(--mono);
@@ -97,8 +101,12 @@
   /* Font-size + theme buttons pinned to the header's top-right. Rounded tiles
      with a panel background so they read clearly as controls. */
   .hdr-tools{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;
-    display:flex;gap:6px;z-index:3;}
+    display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:3;}
+  .hdr-btns{display:flex;gap:6px;}
   header.min .hdr-tools{display:none;}
+  /* Maidenhead grid as a small LED readout, tucked under the header buttons. */
+  .hdr-grid{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;line-height:1;
+    color:var(--clk-blue);text-shadow:0 0 10px rgba(56,207,255,.9),0 0 22px rgba(56,207,255,.45);}
   .hbtn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;
     background:var(--panel2);border:1px solid var(--line);color:var(--ink-dim);
     font-family:var(--mono);font-weight:700;font-size:15px;line-height:1;padding:0;
@@ -456,17 +464,16 @@
     <div class="brand">
       <div class="brandcol">
         <h1>PILEUP</h1>
-        <span class="hdrver" id="hdrVer"></span>
+        <span class="brandline"><span class="hdrcall" id="hdrCall"></span><span class="hdrver" id="hdrVer"></span></span>
       </div>
       <span class="sub">POTA · SOTA Operating Log</span>
       <div class="hdr-tools">
-        <button class="hbtn" id="fontToggle" title="Text size" aria-label="Change text size">A<span class="ab">a</span></button>
-        <button class="hbtn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme">☀</button>
+        <div class="hdr-btns">
+          <button class="hbtn" id="fontToggle" title="Text size" aria-label="Change text size">A<span class="ab">a</span></button>
+          <button class="hbtn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme">☀</button>
+        </div>
+        <span class="hdr-grid" id="hdrGrid" title="Your Maidenhead grid"></span>
       </div>
-    </div>
-    <div class="ident">
-      <span id="hdrCall" class="ident-call"></span>
-      <span id="hdrGrid" class="ident-grid"></span>
     </div>
     <div class="clocks">
       <div class="clock"><span class="lbl">Zulu</span><span class="val" id="utc">--:--:--</span></div>
@@ -709,7 +716,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.017";
+const VERSION="2026.07.16.018";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],

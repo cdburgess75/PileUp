@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.018
+
+**Changed**
+- Compacter header: the Maidenhead grid square now sits directly under the
+  text-size/theme buttons in the top-right as a glowing cyan **LED readout**;
+  the callsign moved up onto the title line (with the version). Dropping the
+  separate identity row and trimming padding shortens the header
+
 ## 2026.07.16.017
 
 **Changed**
