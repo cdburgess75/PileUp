@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.16.018-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.019-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
@@ -65,7 +65,7 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 | **Logbook** | Pre-filled entries from spots, manual entry, edit/delete, live band-aware search (`20m` matches 14 MHz) |
 | **Callsign lookup** | Type a call in the log form and press Enter to auto-fill the operator's name plus QTH/grid (free public database, keyless) |
 | **Hunter stats** | QSOs, unique calls, refs, active days; per-band bars and per-mode counts, live from the log |
-| **Map** | Full-screen world map + azimuthal "QTH radar" views of live spots and logged contacts — band-colored, pinch/zoom/pan, embedded coastline, zero network needed |
+| **Map** | Full-screen world map (with US state borders) + azimuthal "QTH radar" views of live spots and logged contacts — band-colored, pinch/zoom/pan, embedded coastline, zero network needed |
 | **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
 | **Data safety** | One-tap JSON backup of everything; restore or import ADIF logs with duplicate-safe merging; persistent-storage request |
 | **Station tools** | Callsign + lat/lng + Maidenhead grid with GPS auto-locate |

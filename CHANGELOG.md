@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.019
+
+**Added**
+- US **state borders** on the world map, so you can tell which state a spot (or
+  you) is in. Internal state lines from us-atlas (public domain), projected to
+  match the map and simplified — still embedded, still zero network
+
 ## 2026.07.16.018
 
 **Changed**
