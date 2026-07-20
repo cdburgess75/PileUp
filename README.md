@@ -1,17 +1,20 @@
 <div align="center">
 
-<img src="icons/og-image.png" alt="PileUp — POTA · SOTA Operating Log" width="680">
+<img src="screenshots/spots.png" alt="PileUp — live POTA spots with LED clocks and a park-chasing interface" width="300">
 
 # PileUp
 
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.16.025-f0923c?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.16.025-2E8B57?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![PWA](https://img.shields.io/badge/PWA-installable%20%2B%20offline-38cfff?style=flat-square)](#offline--install)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
 
-**[▶ Open the live app](https://cdburgess75.github.io/PileUp/)**
+### **[▶ Open the live app](https://cdburgess75.github.io/PileUp/)**
+
+*No install, no account — it runs the moment it loads.*
 
 </div>
 
@@ -20,7 +23,9 @@
 ## Table of contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Key features](#key-features)
+- [Offline &amp; install](#offline--install)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
 - [Using PileUp](#using-pileup)
@@ -46,11 +51,25 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 
 **Why it stands out:** the entire application is one HTML file with zero runtime dependencies — no framework, no bundler, no build step. It loads fast on weak cell coverage, is auditable in a single read, and will still work when today's framework churn is long forgotten.
 
+## Screenshots
+
 <div align="center">
 
-| Live spots | Searchable logbook |
-|:---:|:---:|
-| <img src="docs/screenshot-spots.png" alt="Live POTA spots in compact rows with band-colored pills, references, and ages" width="320"> | <img src="docs/screenshot-log.png" alt="QSO logbook with operator names auto-filled from callsign lookup" width="320"> |
+| Logbook | Map with borders | Hunter stats |
+|:---:|:---:|:---:|
+| <img src="screenshots/log.png" alt="QSO logbook with operator names auto-filled from callsign lookup" width="260"> | <img src="screenshots/map.png" alt="Full-screen world map with country borders and US state lines, spots and logged contacts plotted" width="260"> | <img src="screenshots/stats.png" alt="Hunter stats dashboard: QSOs, unique calls, references, active days, per-band bars and per-mode counts" width="260"> |
+
+*Live spots (hero, above), a searchable logbook, an embedded world map with country borders + US state / Canadian province lines, and a live hunter-stats dashboard.*
+
+</div>
+
+### Works on every screen
+
+PileUp is a single responsive layout that runs from a 320 px phone up to a desktop browser. On phones you get a bottom tab bar and one comfortable column; on wide screens the tabs move to a left sidebar and the content stays readable rather than stretching. Spot rows measure the actual width and shed columns as needed, so a **full callsign is never truncated** at any size.
+
+<div align="center">
+
+<img src="screenshots/desktop.png" alt="PileUp desktop layout with a left sidebar and roomy spot rows" width="820">
 
 </div>
 
@@ -73,17 +92,14 @@ PileUp is an operating aid for amateur radio operators who hunt **Parks on the A
 | **Responsive** | One layout from 320 px phones to desktop — bottom nav on mobile, a left sidebar on wide screens; spot rows shed columns to keep full callsigns visible |
 | **Offline** | Service-worker shell cache, versioned; last spot fetch cached for offline reload |
 
-## Works on every screen
+## Offline &amp; install
 
-PileUp is a single responsive layout that runs from a 320 px phone up to a desktop browser. On phones (shown above) you get a bottom tab bar and one comfortable column; on wide screens the tabs move to a left sidebar and the content stays readable rather than stretching. Spot rows measure the actual width and shed columns as needed, so a **full callsign is never truncated** at any size.
+PileUp is a full Progressive Web App, so it installs to the home screen and keeps working without a connection:
 
-<div align="center">
-
-<img src="docs/device-desktop.png" alt="PileUp desktop layout with a left sidebar" width="760">
-
-<img src="docs/device-tablet.png" alt="PileUp tablet layout" width="380">
-
-</div>
+- **Installable** — Android/desktop offer a one-tap **Install**; on iOS/iPadOS use Safari → **Share** → **Add to Home Screen**. There's also a QR code on the Tools → Share card to hand it to another operator's phone.
+- **Offline-capable** — a versioned service worker caches the app shell and the last spot fetch, so PileUp opens and your log stays usable with no signal in the field.
+- **Account-free** — nothing to sign up for. All data lives in your browser's `localStorage`; nothing leaves the device except the spot-feed requests.
+- **Auto-updates** — when a new version deploys, an update banner slides up from the bottom; tap **⬆ Update** to apply it.
 
 ## Architecture
 
@@ -93,13 +109,15 @@ PileUp/
 ├── sw.js                        # Service worker: versioned offline cache of the app shell
 ├── manifest.webmanifest         # PWA manifest (icons, theme, display mode)
 ├── icons/                       # App icons (SVG + PNG) and social-preview image
-├── docs/                        # Screenshots used by this README
+├── screenshots/                 # Screenshots used by this README
 ├── test/
-│   └── smoke.mjs                # Smoke suite: syntax, DOM-id coverage, jsdom boot
+│   └── smoke.mjs                # Smoke suite: syntax, DOM-id coverage, jsdom boot, version sync
 └── .github/workflows/smoke.yml  # CI — runs the smoke suite on every push and PR
 ```
 
 Inside `index.html`, the script section is organized as: constants and reference data (band plan, storage keys) → helpers (Maidenhead grid, haversine distance/bearing, formatting) → spot fetch/normalize/render → logbook CRUD and exports → station tools and preferences.
+
+**Tech stack:** plain HTML, CSS, and vanilla JavaScript — no framework, bundler, or build step. Theming uses CSS custom properties (dark + light); the map is a hand-rolled inline SVG (equirectangular world + azimuthal radar) with no mapping library; persistence is `localStorage`; offline is a service worker. The only development-time dependency is **jsdom**, used to boot the app headlessly in the smoke tests.
 
 **Data flow:** spots are fetched from the public POTA and SOTA APIs. If a browser blocks the cross-origin request (common in iOS in-app browsers), the fetch falls back through a relay chain — allorigins → corsproxy.io. A `Content-Security-Policy` meta tag pins network access to exactly these hosts.
 
@@ -165,7 +183,7 @@ Also on the Tools tab: dark/light theme (the ☀/☾ in the header toggles it to
 
 - **Filter by program:** the **All / POTA / SOTA / Other** switch at the top. "Other" is any contact without a park or summit reference — ragchews, nets, DX.
 - **Search** across callsign, reference, mode, date, notes, frequency, and band — multiple terms narrow further (`cw 20m` = CW contacts on 20 m). It combines with the program filter.
-- **Add a contact by hand** with **+ New entry**; **edit** or **delete** any entry from its row.
+- **Add a contact by hand** with **+ New entry**; **edit** or **delete** any entry from its row. The form remembers your last frequency and mode so back-to-back logging is quick.
 - **Callsign lookup:** type a callsign in the log form and press **Enter** (or leave the field) — PileUp fills the operator's **Name** and shows their QTH and grid, using a free public database (best coverage for US/FCC calls). A name you've already typed is never overwritten, and the Name travels with CSV and ADIF export.
 - **▤ Stats** opens a live dashboard: total QSOs, unique callsigns, unique references, active days, plus bars by band and counts by mode.
 - **Export** for awards or other software:
