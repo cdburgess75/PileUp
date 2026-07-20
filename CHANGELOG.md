@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.024
+
+**Added**
+- A new manual log entry now pre-fills the **frequency and mode** from your last
+  logged QSO, so working a run on one frequency no longer means retyping it each
+  time. Spot logs and edits still use their own values
+
 ## 2026.07.16.023
 
 **Changed**
