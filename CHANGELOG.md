@@ -7,6 +7,16 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.020
+
+**Changed**
+- Map borders now cover the **whole world**: international borders for every
+  country (so Mexico, Canada, and all countries are separated, not one land
+  blob), plus first-order subdivisions — **US states** and **Canadian
+  provinces**. Built from world-atlas + us-atlas + world-geojson (all public
+  domain), projected to the map and simplified into one ~40 KB embedded path.
+  Still zero network
+
 ## 2026.07.16.019
 
 **Added**
