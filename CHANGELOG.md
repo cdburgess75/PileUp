@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.017
+
+**Changed**
+- Header top-right now has two clear rounded buttons: a **text-size** button
+  (Aa, cycles the three sizes) next to the theme toggle. The theme glyph is an
+  **orange sun** in dark mode and a **blue moon** in light mode
+- Bottom navigation labels (Spots / Log / Map / Tools) are larger and easier
+  to read, with slightly bigger icons
+
 ## 2026.07.16.016
 
 **Changed**
