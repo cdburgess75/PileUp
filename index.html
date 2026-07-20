@@ -720,7 +720,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.024";
+const VERSION="2026.07.16.025";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1054,11 +1054,13 @@ function openLog(pre,idx){pre=pre||{};const d=new Date();
   document.getElementById("logTitle").textContent=pre.title||(editIdx>=0?"◆ Edit entry":"◆ Log entry");
   document.getElementById("lgDate").value=pre.date||d.toISOString().slice(0,10);
   document.getElementById("lgTime").value=pre.time||(pad(d.getUTCHours())+pad(d.getUTCMinutes()));
-  // A new manual entry pre-fills the last frequency/mode you logged, so working
-  // a run on one frequency doesn't mean retyping it every QSO. Spot logs and
+  // A new manual entry pre-fills the frequency/mode from your most recent QSO,
+  // so working a run on one frequency doesn't mean retyping it. Spot logs and
   // edits pass their own values, so this only fills a blank + New entry.
-  document.getElementById("lgFreq").value=pre.freq||(editIdx<0?(PREFS.lastFreq||""):"");
-  document.getElementById("lgMode").value=pre.mode||(editIdx<0?(PREFS.lastMode||""):"");
+  let _lastQso=null;
+  if(editIdx<0)for(const e of LOG)if(!_lastQso||+e.created>+_lastQso.created)_lastQso=e;
+  document.getElementById("lgFreq").value=pre.freq||((_lastQso&&_lastQso.freq)||"");
+  document.getElementById("lgMode").value=pre.mode||((_lastQso&&_lastQso.mode)||"");
   document.getElementById("lgStation").value=pre.station||"";
   document.getElementById("lgName").value=pre.opname||"";
   const lk=document.getElementById("lgLookup");lk.hidden=true;lk.className="lk-status";lk.innerHTML="";
@@ -1140,10 +1142,6 @@ function saveLog(){
   }else{
     if(_pendingCoords){o.lat=_pendingCoords.lat;o.lng=_pendingCoords.lng;}
     LOG.push(o);
-    // Remember this frequency/mode as the default for the next new entry.
-    if(o.freq)PREFS.lastFreq=o.freq;
-    if(o.mode)PREFS.lastMode=o.mode;
-    saveJSON(K.prefs,PREFS);
   }
   saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(wasEdit?"Updated":"Logged");}
 function logFromSpot(t){

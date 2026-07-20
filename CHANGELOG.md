@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.16.025
+
+**Changed**
+- The remembered frequency/mode for a new log entry now comes from your most
+  recent logged QSO (your existing log history), so it works right away instead
+  of only remembering QSOs logged after this update
+
 ## 2026.07.16.024
 
 **Added**
