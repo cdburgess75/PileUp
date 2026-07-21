@@ -1,6 +1,6 @@
 {
   "name": "pileup",
-  "version": "2026.7.16",
+  "version": "2026.7.21",
   "description": "POTA & SOTA live spots and QSO log — single-file PWA",
   "private": true,
   "license": "MIT",

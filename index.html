@@ -53,14 +53,17 @@
   .netdot.on{box-shadow:0 0 8px var(--green),0 0 16px rgba(174,216,202,.5);}
 
   [data-theme="light"]{
-    --bg:#F9FBFF;--nav-bg:#F7F7F7;--panel:#FFFFFF;--panel2:#F7F7F7;--line:#d7e5da;
-    --amber:#17643a;--amber-dim:#2e8b57;--fill:#1b6b3a;--qth:#c8600f;
+    /* "Tactical Document" light — high-contrast, printed field-manual look:
+       forest-green headers/active items, burnt-amber Zulu, sky-blue UTC/grid,
+       ice-gray hairline card borders, warm-gray muted text on crisp paper. */
+    --bg:#F9FAF9;--nav-bg:#F4F7F4;--panel:#FFFFFF;--panel2:#F4F7F4;--line:#EAEFEA;
+    --amber:#1E6B3E;--amber-dim:#2E8B57;--fill:#1E6B3E;--qth:#C87A1E;
     --green:#2E8B7A;--green-dim:#AED8CA;
-    --blue:#1f5fb0;--blue-dim:#9cc0e8;
+    --blue:#2A7FC0;--blue-dim:#53C2FF;
     --red:#C83430;
-    --ink:#12202f;--ink-dim:#3a4655;
-    --clk-zulu:#a9640a;--clk-blue:#0e7e9c;
-    --header-bg:linear-gradient(180deg,#e9f2ec,#FFFFFF);
+    --ink:#152018;--ink-dim:#758277;
+    --clk-zulu:#C87A1E;--clk-blue:#53C2FF;
+    --header-bg:linear-gradient(180deg,#EFF4EF,#FFFFFF);
   }
   [data-theme="light"] body{background-image:none;}
   [data-theme="light"] .brand h1,
@@ -720,7 +723,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.16.025";
+const VERSION="2026.07.21.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],

@@ -7,6 +7,18 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.21.001
+
+**Changed**
+- New **"Tactical Document"** light theme — a high-contrast, printed
+  field-manual look: forest-green (`#1E6B3E`) headers and active items,
+  burnt-amber (`#C87A1E`) Zulu clock, sky-blue (`#53C2FF`) UTC clock and grid,
+  ice-gray (`#EAEFEA`) hairline card borders, and warm-gray muted text on crisp
+  paper. Dark mode is unchanged
+- Refreshed the app icon set (home-screen / Apple touch icon, favicon/bookmark,
+  and the 192/512 PWA icons) to the balanced antenna mark with radio waves on
+  both sides, matching the social-preview image; icon green aligned to `#1E6B3E`
+
 ## 2026.07.16.025
 
 **Changed**
