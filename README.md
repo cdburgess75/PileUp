@@ -7,7 +7,7 @@
 **Live POTA &amp; SOTA spots and a full QSO logbook in a single-file PWA — installable, offline-capable, and account-free.**
 
 [![smoke tests](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml/badge.svg)](https://github.com/cdburgess75/PileUp/actions/workflows/smoke.yml)
-[![version](https://img.shields.io/badge/version-2026.07.21.001-2E8B57?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
+[![version](https://img.shields.io/badge/version-2026.07.30.001-2E8B57?style=flat-square)](https://github.com/cdburgess75/PileUp/commits/main)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%2B%20offline-38cfff?style=flat-square)](#offline--install)
 [![runtime dependencies](https://img.shields.io/badge/runtime_deps-0-2E8B7A?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-8bb4e8?style=flat-square)](LICENSE)
@@ -88,6 +88,7 @@ PileUp is a single responsive layout that runs from a 320 px phone up to a deskt
 | **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
 | **Data safety** | One-tap JSON backup of everything; restore or import ADIF logs with duplicate-safe merging; persistent-storage request |
 | **Station tools** | Callsign + lat/lng + Maidenhead grid with GPS auto-locate |
+| **Spot yourself** | Activating? Compose your spot once — PileUp remembers it, so a QSY is one edit — then copy it and open POTA or SOTAwatch to post. Reference and band are sanity-checked as you type |
 | **UI** | Dark/light themes, three font sizes, 12/24 h clock, kiosk mode (fullscreen + wake-lock); dual UTC (Zulu) + local LED clocks with seconds |
 | **Responsive** | One layout from 320 px phones to desktop — bottom nav on mobile, a left sidebar on wide screens; spot rows shed columns to keep full callsigns visible |
 | **Offline** | Service-worker shell cache, versioned; last spot fetch cached for offline reload |
@@ -168,6 +169,19 @@ Do this once so distances, bearings, and your grid square work everywhere.
 4. Tap **Save**. Your Maidenhead grid (e.g. `FN42li`) appears in the header, and every spot now shows its distance and bearing from you.
 
 Also on the Tools tab: dark/light theme (the ☀/☾ in the header toggles it too), font size, 12/24-hour clock, **Kiosk mode** (fullscreen with screen-wake for a shack dashboard), and the **Backup & restore** card (see below).
+
+### Spot yourself (Tools tab) — if you're the activator
+
+**Tools** → **◆ Spot yourself** composes a spot from your saved callsign:
+
+1. Pick **POTA · Park** or **SOTA · Summit**.
+2. Enter your **reference** (`US-1234` or `W5/LO-001`), **frequency** in kHz, **mode**, and an optional **comment** ("QRP 5W · vertical").
+3. The line under the form previews exactly what you'll post, with the band alongside it. Bad reference formats and out-of-band frequencies are flagged — as warnings, so you can always post anyway.
+4. **⇗ Post** copies the line and opens POTA or SOTAwatch in a new tab; paste it into their spot form. **⧉ Copy** just copies, which is handy for texting a spot to a friend or dropping it in a group chat.
+
+Your details are remembered per program, so re-spotting after a QSY means changing the frequency and tapping **⇗ Post** again.
+
+> **PileUp doesn't submit the spot for you.** Both spot APIs need an authenticated session, and a static page with no backend has nowhere safe to keep one — so posting hands off to the site you're already signed in to.
 
 ### Spots tab — find and log activations
 

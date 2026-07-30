@@ -585,6 +585,33 @@
       <div class="hint" id="gridHint"></div>
     </div>
 
+    <div class="card" id="selfSpotCard">
+      <h3>◆ Spot yourself</h3>
+      <div class="hint" style="margin-bottom:10px">Activating a park or summit? Build your spot here and PileUp
+        remembers it, so a QSY is one edit away. <b>Post</b> hands it to POTA or SOTAwatch — both need you signed
+        in on their site, so PileUp can't send it for you.</div>
+      <div class="seg" id="seg-self">
+        <button data-sp="pota" class="on">POTA · Park</button>
+        <button data-sp="sota">SOTA · Summit</button>
+      </div>
+      <div class="formgrid">
+        <label class="wide">Reference
+          <input type="text" id="ssRef" placeholder="US-1234" autocomplete="off" spellcheck="false"
+                 style="text-transform:uppercase;letter-spacing:.06em">
+        </label>
+        <label>Freq kHz<input type="number" id="ssFreq" step="0.1" inputmode="decimal" placeholder="14285"></label>
+        <label>Mode<input type="text" id="ssMode" placeholder="SSB" autocomplete="off" spellcheck="false"
+                 style="text-transform:uppercase"></label>
+        <label class="wide">Comment<input type="text" id="ssCmt" placeholder="QRP 5W · vertical" autocomplete="off"></label>
+      </div>
+      <div class="hint" id="ssPreview" aria-live="polite" style="margin-bottom:10px"></div>
+      <div class="btnrow">
+        <button class="btn sm" id="ssGo">⇗ Post on POTA</button>
+        <button class="btn ghost sm" id="ssCopy">⧉ Copy</button>
+        <button class="btn ghost sm" id="ssClear">Clear</button>
+      </div>
+    </div>
+
     <div class="card" id="displayCard">
       <h3>◆ Display</h3>
       <div class="hint" style="margin-bottom:6px">Theme</div>
@@ -723,7 +750,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.21.001";
+const VERSION="2026.07.30.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1040,6 +1067,80 @@ function renderSpots(){
     el.classList.toggle("xxtight",177+callPx+refPx>avail);
   }
   el.innerHTML=list.map(spotRowHTML).join("");
+}
+
+/* ============ spot yourself ============ */
+/* PileUp composes the spot; it does not send it. Both spot endpoints want an
+   authenticated session that a static page with no backend can't hold, so
+   "Post" opens the site the operator is already signed in to and puts the
+   composed line on the clipboard to paste. The details persist, so re-spotting
+   after a QSY is one field edit rather than a retype. */
+const SELF_URL={pota:"https://pota.app/#/spots",sota:"https://sotawatch.sota.org.uk/"};
+const SELF_SITE={pota:"POTA",sota:"SOTAwatch"};
+// Park refs are XX-1234 / XX-12345; summit refs are ASSOC/RR-999.
+const SELF_REF_RE={pota:/^[A-Z0-9]{1,3}-\d{4,5}$/,sota:/^[A-Z0-9]{1,3}\/[A-Z]{2}-\d{3}$/};
+const SELF_REF_EG={pota:"US-1234",sota:"W5/LO-001"};
+const SELF_FIELDS=["ssRef","ssFreq","ssMode","ssCmt"];
+let selfProg=PREFS.selfProg==="sota"?"sota":"pota";
+// Refs are per-program (a park ref is meaningless on SOTAwatch); frequency,
+// mode and comment carry across, since those are what a QSY actually changes.
+function selfRefs(){return Object.assign({pota:"",sota:""},PREFS.selfRefs);}
+function selfSpotText(){
+  const f=parseFloat(document.getElementById("ssFreq").value);
+  return [(PREFS.call||"").toUpperCase().trim(),
+    document.getElementById("ssRef").value.toUpperCase().trim(),
+    isFinite(f)&&f>0?fmtFreq(f)+" "+freqUnit(f):"",
+    document.getElementById("ssMode").value.toUpperCase().trim(),
+    document.getElementById("ssCmt").value.trim()].filter(Boolean).join("  ");
+}
+function renderSelfSpot(){
+  const ref=document.getElementById("ssRef").value.toUpperCase().trim();
+  const f=parseFloat(document.getElementById("ssFreq").value),band=isFinite(f)?hamBandOf(f):"";
+  // Warn, never block: the reference and band lists here can lag reality, and
+  // a wrong spot is the activator's to fix, not ours to refuse.
+  const warn=[];
+  if(!(PREFS.call||"").trim())warn.push("set your callsign in My station above");
+  if(ref&&!SELF_REF_RE[selfProg].test(ref))warn.push("reference doesn't look like "+SELF_REF_EG[selfProg]);
+  if(isFinite(f)&&f>0&&!band)warn.push(fmtFreq(f)+" "+freqUnit(f)+" isn't in a ham band");
+  const txt=selfSpotText();
+  document.getElementById("ssPreview").innerHTML=
+    (txt?'<b style="color:var(--ink)">'+esc(txt)+'</b>'+(band?' <span class="badge">'+esc(band)+'</span>':'')
+       :"Fill in a reference and frequency.")+
+    (warn.length?'<div style="color:var(--qth);margin-top:5px">⚠ '+esc(warn.join(" · "))+'</div>':'');
+}
+function saveSelfSpot(){
+  const refs=selfRefs();refs[selfProg]=document.getElementById("ssRef").value.toUpperCase().trim();
+  PREFS.selfProg=selfProg;PREFS.selfRefs=refs;
+  PREFS.selfFreq=document.getElementById("ssFreq").value;
+  PREFS.selfMode=document.getElementById("ssMode").value.toUpperCase().trim();
+  PREFS.selfCmt=document.getElementById("ssCmt").value;
+  saveJSON(K.prefs,PREFS);
+}
+function fillSelfSpot(){
+  document.getElementById("ssRef").value=selfRefs()[selfProg];
+  document.getElementById("ssRef").placeholder=SELF_REF_EG[selfProg];
+  document.getElementById("ssFreq").value=PREFS.selfFreq||"";
+  document.getElementById("ssMode").value=PREFS.selfMode||"";
+  document.getElementById("ssCmt").value=PREFS.selfCmt||"";
+  document.getElementById("ssGo").textContent="⇗ Post on "+SELF_SITE[selfProg];
+  document.querySelectorAll("#seg-self button").forEach(b=>b.classList.toggle("on",b.dataset.sp===selfProg));
+  renderSelfSpot();
+}
+/* Resolves true only when the text really reached the clipboard; callers that
+   pass quiet handle their own messaging. Where clipboard access is denied the
+   toast shows the line so it can still be read out or retyped. */
+async function copySelfSpot(quiet){
+  const t=selfSpotText();
+  if(!t){if(!quiet)toast("Nothing to copy yet");return false;}
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(t);
+      if(!quiet)toast("Spot copied");
+      return true;
+    }
+  }catch(e){}
+  if(!quiet)toast(t);
+  return false;
 }
 
 /* ============ logbook ============ */
@@ -1706,7 +1807,7 @@ document.getElementById("saveStation").addEventListener("click",()=>{
         ln=parseFloat(document.getElementById("geoLng").value);
   PREFS.call=c;saveJSON(K.prefs,PREFS);
   if(isFinite(la)&&isFinite(ln)){GEO={lat:la,lng:ln,label:GEO.label};saveJSON(K.geo,GEO);}
-  renderIdent();toast("Station saved");});
+  renderIdent();renderSelfSpot();toast("Station saved");});
 document.getElementById("callIn").addEventListener("input",()=>{document.getElementById("callIn").dataset.dirty="1";});
 document.getElementById("useLoc").addEventListener("click",()=>{
   if(!navigator.geolocation){toast("No geolocation");return;}
@@ -1719,6 +1820,25 @@ document.getElementById("useLoc").addEventListener("click",()=>{
     renderIdent();toast("Location set");},
     e=>toast(e&&e.code===3?"Location timed out":"Location denied"),
     {timeout:10000,maximumAge:60000});});
+
+document.querySelectorAll("#seg-self button").forEach(b=>b.addEventListener("click",()=>{
+  // Bank the typed ref under the outgoing program before switching, or
+  // fillSelfSpot would overwrite it with the incoming program's ref.
+  saveSelfSpot();selfProg=b.dataset.sp;PREFS.selfProg=selfProg;saveJSON(K.prefs,PREFS);
+  fillSelfSpot();}));
+SELF_FIELDS.forEach(id=>document.getElementById(id)
+  .addEventListener("input",debounce(()=>{saveSelfSpot();renderSelfSpot();},150)));
+document.getElementById("ssGo").addEventListener("click",()=>{
+  saveSelfSpot();renderSelfSpot();
+  // Open inside the gesture or Safari's popup blocker eats it; the clipboard
+  // write is allowed to finish afterwards.
+  window.open(SELF_URL[selfProg],"_blank","noopener");
+  copySelfSpot(true).then(ok=>toast(ok?"Spot copied — paste it on "+SELF_SITE[selfProg]
+    :"Opening "+SELF_SITE[selfProg]));});
+document.getElementById("ssCopy").addEventListener("click",()=>{saveSelfSpot();copySelfSpot(false);});
+document.getElementById("ssClear").addEventListener("click",()=>{
+  SELF_FIELDS.forEach(id=>{document.getElementById(id).value="";});
+  saveSelfSpot();renderSelfSpot();toast("Cleared");});
 
 document.getElementById("shareBtn").addEventListener("click",async()=>{
   const url="https://cdburgess75.github.io/PileUp/";
@@ -1791,7 +1911,7 @@ applyTheme(PREFS.theme||"");applyZoom(PREFS.zoom||1);
 document.getElementById("hr24Toggle").checked=PREFS.hr24!==false;
 document.getElementById("geoLat").value=GEO.lat;
 document.getElementById("geoLng").value=GEO.lng;
-renderIdent();renderLog();
+renderIdent();renderLog();fillSelfSpot();
 document.querySelectorAll("#spotChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.sm===spotMode));
 document.querySelectorAll("#seg-log button").forEach(b=>b.classList.toggle("on",b.dataset.lp===logProg));
 document.getElementById("sortBtn").textContent=spotSort==="freq"?"≡ Freq":"≡ Age";

@@ -7,6 +7,21 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.07.30.001
+
+**Added**
+- **Spot yourself** card (Tools) for activators: pick POTA or SOTA, enter your
+  park/summit reference, frequency, mode and a comment, and PileUp composes the
+  spot line from your saved callsign. **⇗ Post** copies it and opens POTA or
+  SOTAwatch to paste; **⧉ Copy** puts it on the clipboard for a group chat or
+  SMS. Details persist per program, so re-spotting after a QSY is one edit
+- The composed spot is sanity-checked as you type — reference format per program
+  and whether the frequency lands in a ham band — as warnings, never blocks
+
+**Note**
+- PileUp does not submit the spot. Both spot APIs require an authenticated
+  session, and a static page with no backend can't hold one
+
 ## 2026.07.21.001
 
 **Changed**
