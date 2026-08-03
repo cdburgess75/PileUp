@@ -502,7 +502,7 @@
     <div class="seg" id="seg-spots">
       <button data-sub="pota" class="on">POTA<span class="sd"> · Parks</span></button>
       <button data-sub="sota">SOTA<span class="sd"> · Summits</span></button>
-      <button data-sub="xota">xOTA<span class="sd"> · More</span></button>
+      <button data-sub="xota">*OTA<span class="sd"> · More</span></button>
     </div>
     <div class="chips" id="spotChips">
       <span class="chip on" data-sm="all">All modes</span>
@@ -800,7 +800,10 @@ let LOG=loadJSON(K.log,[]);
 let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0}),
            xota:loadJSON(K.xota,{list:[],ts:0})};
 const PROGS=["pota","sota","xota"];
-const PROG_LABEL={pota:"POTA",sota:"SOTA",xota:"xOTA"};
+// "*OTA" reads as the wildcard it is, and unlike "xOTA" it survives the
+// uppercase transform on the segment buttons unchanged. The internal id stays
+// `xota` — it is a storage key, not a label.
+const PROG_LABEL={pota:"POTA",sota:"SOTA",xota:"*OTA"};
 let spotProg="pota",spotMode=PREFS.spotMode||"all",spotStatus="";
 // Multi-select band filter: a Set of band labels, empty = all bands. Migrates
 // from the old single-band `spotBand` pref.

@@ -10,7 +10,7 @@ the zero-padding.
 ## Unreleased
 
 **Added**
-- Third spot tab, **xOTA · More**, carrying the long tail of activation
+- Third spot tab, **\*OTA · More**, carrying the long tail of activation
   programmes — WWFF, GMA, WWBOTA, HEMA, WOTA, ZLOTA, LLOTA (lakes and lagoons),
   WWTOTA and others — via the [Spothole](https://spothole.app) aggregator.
   Rows tag each spot with its programme, and the programme is searchable
