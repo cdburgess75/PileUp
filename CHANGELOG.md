@@ -7,6 +7,28 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## Unreleased
+
+**Added**
+- Third spot tab, **xOTA · More**, carrying the long tail of activation
+  programmes — WWFF, GMA, WWBOTA, HEMA, WOTA, ZLOTA, LLOTA (lakes and lagoons),
+  WWTOTA and others — via the [Spothole](https://spothole.app) aggregator.
+  Rows tag each spot with its programme, and the programme is searchable
+- POTA and SOTA deliberately keep their own direct feeds: they are the two
+  programmes PileUp is built around, and routing them through a third party
+  would put the core feature behind someone else's uptime
+
+**Fixed**
+- The programme a QSO belongs to is now **recorded** rather than guessed from
+  the reference's shape. A WWFF reference (`GFF-0123`) is indistinguishable
+  from a POTA one by format, so it was being filed — and exported — as POTA
+- ADIF export writes `POTA_REF` / `SOTA_REF` only for those programmes; every
+  other programme now uses the standard `SIG` / `SIG_INFO` pair. ADIF import
+  reads them back, so a log round-trips without losing its programme
+- A spot feed whose response shape stops matching what PileUp parses is now
+  reported as a failed refresh with the cached spots kept, instead of an empty
+  list that reads as "nobody is on the air"
+
 ## 2026.08.16.002
 
 **Changed**

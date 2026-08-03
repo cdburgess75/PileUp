@@ -11,7 +11,7 @@
 <!-- The app is one inline script/stylesheet, so 'unsafe-inline' is required;
      the value of this policy is the connect-src allowlist, which pins network
      access to the two spot APIs and the two CORS relay fallbacks. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.pota.app https://api-db2.sota.org.uk https://api2.sota.org.uk https://api.hamdb.org https://api.allorigins.win https://corsproxy.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.pota.app https://api-db2.sota.org.uk https://api2.sota.org.uk https://spothole.app https://api.hamdb.org https://api.allorigins.win https://corsproxy.io; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="description" content="Live POTA & SOTA spots and QSO logger for ham radio operators. Installable, works offline, no account.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -180,6 +180,10 @@
     font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.1em;padding:10px 4px;border-radius:6px;
     cursor:pointer;text-transform:uppercase;}
   .seg button.on{color:#fff;border-color:var(--fill);background:var(--fill);}
+  /* Three programs don't fit a narrow phone at full width, so the descriptor
+     after the acronym is dropped first — same shed-detail trick the spot rows
+     use for band units. The acronym itself never disappears. */
+  @media (max-width:430px){.seg .sd{display:none;}}
 
   .chips{display:flex;gap:6px;margin:0 0 11px;flex-wrap:nowrap;overflow-x:auto;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
@@ -496,8 +500,9 @@
   <!-- ============ SPOTS ============ -->
   <section id="tab-spots">
     <div class="seg" id="seg-spots">
-      <button data-sub="pota" class="on">POTA · Parks</button>
-      <button data-sub="sota">SOTA · Summits</button>
+      <button data-sub="pota" class="on">POTA<span class="sd"> · Parks</span></button>
+      <button data-sub="sota">SOTA<span class="sd"> · Summits</span></button>
+      <button data-sub="xota">xOTA<span class="sd"> · More</span></button>
     </div>
     <div class="chips" id="spotChips">
       <span class="chip on" data-sm="all">All modes</span>
@@ -785,14 +790,17 @@ const BORDERS_PATH="M440.6 200.6L439.0 201.8L436.9 202.6L435.7 202.5L434.9 203.1
 
 /* ============ state & persistence ============ */
 const K={prefs:"pileup_prefs_v1",log:"pileup_log_v1",geo:"pileup_geo_v1",
-         pota:"pileup_pota_v1",sota:"pileup_sota_v1"};
+         pota:"pileup_pota_v1",sota:"pileup_sota_v1",xota:"pileup_xota_v1"};
 function loadJSON(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function saveJSON(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){if(e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")toast("Storage full — data not saved");}}
 
 let GEO=loadJSON(K.geo,{lat:30.61,lng:-90.36,label:""});
 let PREFS=loadJSON(K.prefs,{call:"",theme:"",zoom:1,hr24:true,spotBand:"all",spotMode:"all",spotSort:"freq"});
 let LOG=loadJSON(K.log,[]);
-let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0})};
+let SPOTS={pota:loadJSON(K.pota,{list:[],ts:0}),sota:loadJSON(K.sota,{list:[],ts:0}),
+           xota:loadJSON(K.xota,{list:[],ts:0})};
+const PROGS=["pota","sota","xota"];
+const PROG_LABEL={pota:"POTA",sota:"SOTA",xota:"xOTA"};
 let spotProg="pota",spotMode=PREFS.spotMode||"all",spotStatus="";
 // Multi-select band filter: a Set of band labels, empty = all bands. Migrates
 // from the old single-band `spotBand` pref.
@@ -802,7 +810,7 @@ function saveBands(){PREFS.spotBands=[...spotBands];saveJSON(K.prefs,PREFS);}
 let editIdx=-1;
 let spotSort=PREFS.spotSort||"freq";
 let logProg=PREFS.logProg||"all";
-const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0}};
+const _spotMeta={pota:{failCount:0,failTs:0},sota:{failCount:0,failTs:0},xota:{failCount:0,failTs:0}};
 let _worked=new Set();
 
 /* ============ helpers ============ */
@@ -934,8 +942,18 @@ function fetchWithTimeout(url,opts,ms){const ac=new AbortController();const id=s
 function relays(raw){return[raw,
   "https://api.allorigins.win/raw?url="+encodeURIComponent(raw),
   "https://corsproxy.io/?url="+encodeURIComponent(raw)];}
+/* Spothole aggregates the long tail of xOTA programmes (WWFF, GMA, WWBOTA,
+   HEMA, WOTA, ZLOTA, LLOTA, WWTOTA, Parks 'n' Peaks…) behind one JSON feed.
+   POTA and SOTA keep their own direct feeds above on purpose: those are the
+   two programmes PileUp is built around, and routing them through a third
+   party would put the core feature behind someone else's uptime. */
+const XOTA_URL="https://spothole.app/api/v1/spots";
+// Programmes that already have their own tab, filtered out of the xOTA feed so
+// the same activation doesn't appear twice in the app.
+const XOTA_SKIP=new Set(["POTA","SOTA"]);
 async function getSpots(prog){
   const urls=prog==="pota"?["https://api.pota.app/spot/activator"]
+    :prog==="xota"?[XOTA_URL]
     :["https://api-db2.sota.org.uk/api/spots/40/all","https://api2.sota.org.uk/api/spots/40/all"];
   for(const base of urls)for(const url of relays(base)){
     try{const res=await fetchWithTimeout(url,{cache:"no-store"});if(!res||!res.ok)continue;
@@ -958,6 +976,28 @@ function normSota(d){return d.map(x=>{let ref=x.summitCode||"";
     name:x.summitDetails||x.summitName||"",mode:(x.mode||"").toUpperCase(),
     when:parseUTC(x.timeStamp),comments:x.comments||"",loc:x.associationCode||"",
     lat:parseFloat(x.summitLat||x.latitude),lng:parseFloat(x.summitLng||x.longitude)};});}
+/* PROVISIONAL — the Spothole response shape has NOT been verified against the
+   live API (its docs were unreachable when this was written). Field names are
+   read tolerantly and the frequency unit is inferred, so a shape mismatch
+   degrades to "no spots" rather than to wrong frequencies. Replace the
+   guessing with the documented field names once a real response is in hand;
+   nothing outside this function depends on the contract. */
+function normXota(d){return d.map(x=>{
+  const sig=String(x.sig||x.program||x.sigName||x.sourceName||x.source||"").toUpperCase().trim();
+  const ref=String(x.sigRef||x.reference||x.ref||x.locationRef||"").toUpperCase().trim();
+  // kHz or MHz is the classic trap here (POTA reports kHz, SOTA MHz). Ham
+  // allocations start at 1.8 MHz, so a bare number under 1000 can only be MHz.
+  const raw=parseFloat(x.frequency!=null?x.frequency:(x.freq!=null?x.freq:x.qrg));
+  const freq=isFinite(raw)?(raw<1000?raw*1000:raw):NaN;
+  return{freq,call:String(x.activator||x.activatorCallsign||x.dxCall||x.call||"").toUpperCase(),
+    ref,sig,name:x.name||x.locationName||x.sigRefName||x.summitName||"",
+    mode:String(x.mode||"").toUpperCase(),
+    when:parseUTC(x.time||x.timestamp||x.spotTime||x.when||x.dateTime),
+    comments:x.comments||x.comment||x.text||"",
+    loc:x.locationDesc||x.location||x.association||"",
+    lat:parseFloat(x.latitude!=null?x.latitude:x.lat),
+    lng:parseFloat(x.longitude!=null?x.longitude:(x.lon!=null?x.lon:x.lng))};
+}).filter(s=>!XOTA_SKIP.has(s.sig));}
 let _refreshing=false;
 async function refreshSpots(){
   // A refresh can be triggered by the interval, visibilitychange, the online
@@ -969,10 +1009,15 @@ async function refreshSpots(){
     if(!navigator.onLine){spotStatus="offline";setSpotSpin(false);renderSpots();return;}
     spotStatus="loading";renderSpots();
     let data=null;try{data=await getSpots(prog);}catch(e){}
-    if(data){const list=(prog==="pota"?normPota:normSota)(data).filter(s=>isFinite(s.freq)&&s.freq>0);
-      SPOTS[prog]={list,ts:Date.now()};saveJSON(K[prog],SPOTS[prog]);
-      if(prog===spotProg)spotStatus="";_spotMeta[prog].failCount=0;_spotMeta[prog].failTs=0;}
-    else if(prog===spotProg){spotStatus="failed";_spotMeta[prog].failCount++;_spotMeta[prog].failTs=Date.now();}
+    // getSpots only returns non-empty arrays, so normalizing every record away
+    // means the feed's shape stopped matching what we parse. Report that as a
+    // failure — showing "no spots" would read as "nobody is on the air".
+    if(data){const norm=prog==="pota"?normPota:prog==="xota"?normXota:normSota;
+      const list=norm(data).filter(s=>isFinite(s.freq)&&s.freq>0);
+      if(!list.length)data=null;
+      else{SPOTS[prog]={list,ts:Date.now()};saveJSON(K[prog],SPOTS[prog]);
+        if(prog===spotProg)spotStatus="";_spotMeta[prog].failCount=0;_spotMeta[prog].failTs=0;}}
+    if(!data&&prog===spotProg){spotStatus="failed";_spotMeta[prog].failCount++;_spotMeta[prog].failTs=Date.now();}
     setSpotSpin(false);if(prog===spotProg)renderSpots();
   }finally{_refreshing=false;}
 }
@@ -983,13 +1028,19 @@ function setSpotSpin(on){const b=document.getElementById("spotRefresh");if(!b)re
 // Expansion state keyed by spot identity so it survives the 60 s re-render.
 let _expandedSpots=new Set();
 function spotKey(s){return(s.call||"")+"|"+(s.ref||"")+"|"+Math.round(s.freq);}
+/* The xOTA feed mixes programmes, so its reference column carries the
+   programme tag ("WWFF GFF-0123"). POTA and SOTA rows are single-programme
+   and stay bare. Width measurement and rendering must agree, so both go
+   through here. */
+function refText(s){return s.sig?s.sig+" "+s.ref:(s.ref||"");}
 function spotRowHTML(s){
   // 45 min with no re-spot usually means the activation is over; dim the row.
   const ms=+new Date(s.when),age=ageStr(ms),stale=Date.now()-ms>45*60000;
   const band=hamBandOf(s.freq),md=s.mode?'<span class="badge">'+esc(s.mode)+'</span>':'';
   const key=spotKey(s),open=_expandedSpots.has(key);
   const da='data-act="spotlog" data-key="'+attr(key)+'" data-f="'+attr(Math.round(s.freq*10)/10)+'" data-call="'+attr(s.call)+
-    '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"'+
+    '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+
+    '" data-sig="'+attr(s.sig||"")+'" data-prog="'+spotProg+'"'+
     (isFinite(s.lat)&&isFinite(s.lng)?' data-lat="'+s.lat+'" data-lng="'+s.lng+'"':'');
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+';--bt:'+bandInk(BAND_COLOR[band])+'"':'';
   // Number and unit are separate spans so dense mode can drop the " m".
@@ -1010,11 +1061,11 @@ function spotRowHTML(s){
       '<span class="cband">'+bandTag+'</span>'+
       '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span>'+
       '<span class="sub">'+md+
-      (s.ref?'<span class="cref">'+esc(s.ref)+'</span>':'')+locTag+
+      (s.ref?'<span class="cref">'+esc(refText(s))+'</span>':'')+locTag+
       '<span class="time">'+age+'</span></span></div>';
   }
   // Expanded: the flag replaces the country half of the code — 🇺🇸 LA, not US-LA.
-  const meta=[esc(s.ref),esc(s.name),li?'<span class="fl">'+flagOf(li.iso)+'</span> '+esc(li.st||s.loc):esc(s.loc)]
+  const meta=[esc(refText(s)),esc(s.name),li?'<span class="fl">'+flagOf(li.iso)+'</span> '+esc(li.st||s.loc):esc(s.loc)]
     .filter(Boolean).join(" · ");
   const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
   const wkd=worked?'<span class="wkd">✓ worked</span>':'';
@@ -1054,7 +1105,7 @@ document.getElementById("spotBandChips").addEventListener("click",ev=>{
   saveBands();renderBandChips();renderSpots();
 });
 function renderSpots(){
-  const prog=spotProg,PROG=prog.toUpperCase(),pack=SPOTS[prog]||{list:[],ts:0};
+  const prog=spotProg,PROG=PROG_LABEL[prog]||prog.toUpperCase(),pack=SPOTS[prog]||{list:[],ts:0};
   const today=new Date().toISOString().slice(0,10);
   _worked=new Set(LOG.filter(e=>e.station&&e.date===today).map(e=>e.station.toUpperCase().trim()));
   const f=document.getElementById("spotFilter").value.trim().toLowerCase();
@@ -1063,7 +1114,7 @@ function renderSpots(){
     if(spotMode==="ssb"&&!/SSB|USB|LSB|PHONE/.test(s.mode))return false;
     if(spotMode==="data"&&!/FT8|FT4|DATA|RTTY|JS8|DIG|PSK|JT/.test(s.mode))return false;
     if(spotBands.size&&!spotBands.has(hamBandOf(s.freq)))return false;
-    if(f&&!(s.call+" "+s.ref+" "+s.name+" "+s.loc+" "+s.mode).toLowerCase().includes(f))return false;
+    if(f&&!(s.call+" "+s.ref+" "+(s.sig||"")+" "+s.name+" "+s.loc+" "+s.mode).toLowerCase().includes(f))return false;
     return true;
   }).sort((a,b)=>spotSort==="age"?+new Date(b.when)-+new Date(a.when):a.freq-b.freq);
   renderBandChips();
@@ -1165,15 +1216,18 @@ async function copySelfSpot(quiet){
 
 /* ============ logbook ============ */
 let _lastFocus=null;
-function closeLog(){editIdx=-1;_pendingCoords=null;document.getElementById("lgSave").textContent="Save";
+function closeLog(){editIdx=-1;_pendingCoords=null;_pendingSig="";document.getElementById("lgSave").textContent="Save";
   const ld=document.getElementById("lgDelete");if(ld)ld.style.display="none";
   document.getElementById("logModal").hidden=true;
   if(_lastFocus&&document.contains(_lastFocus)){_lastFocus.focus();}_lastFocus=null;}
-let _pendingCoords=null;
+let _pendingCoords=null,_pendingSig="";
 function openLog(pre,idx){pre=pre||{};const d=new Date();
   editIdx=(typeof idx==="number")?idx:-1;
   // Spot coordinates ride along invisibly so the map can plot the QSO later.
   _pendingCoords=(isFinite(pre.lat)&&isFinite(pre.lng))?{lat:pre.lat,lng:pre.lng}:null;
+  // So does the programme, so the ADIF export knows which reference tag to
+  // write instead of guessing from the reference's shape.
+  _pendingSig=String(pre.sig||"").toUpperCase();
   document.getElementById("lgSave").textContent=editIdx>=0?"Update":"Save";
   document.getElementById("logTitle").textContent=pre.title||(editIdx>=0?"◆ Edit entry":"◆ Log entry");
   document.getElementById("lgDate").value=pre.date||d.toISOString().slice(0,10);
@@ -1259,29 +1313,40 @@ function saveLog(){
   if(!o.freq&&!o.station){toast("Add a frequency or callsign");return;}
   const wasEdit=editIdx>=0;
   if(wasEdit){
-    // Keep coordinates through edits — the form has no lat/lng fields.
+    // Keep coordinates and programme through edits — the form has no fields
+    // for either, so an edit would otherwise silently drop them.
     const old=LOG[editIdx];o.created=old.created;
     if(isFinite(old.lat)&&isFinite(old.lng)){o.lat=old.lat;o.lng=old.lng;}
+    if(old.sig)o.sig=old.sig;
     LOG[editIdx]=o;
   }else{
     if(_pendingCoords){o.lat=_pendingCoords.lat;o.lng=_pendingCoords.lng;}
+    if(_pendingSig)o.sig=_pendingSig;
     LOG.push(o);
   }
   saveJSON(K.log,LOG);closeLog();renderLog();renderSpots();toast(wasEdit?"Updated":"Logged");}
 function logFromSpot(t){
-  const prog=(t.dataset.prog||spotProg).toUpperCase(),mode=t.dataset.md||"",
+  // The xOTA tab carries many programmes, so the spot's own SIG wins over the
+  // tab name; without it a WWFF reference would be exported as a POTA one.
+  const prog=(t.dataset.sig||t.dataset.prog||spotProg).toUpperCase(),mode=t.dataset.md||"",
     call=t.dataset.call||"",ref=t.dataset.ref||"",name=t.dataset.name||"",f=t.dataset.f||"";
   const rst=/CW|FT8|FT4|RTTY|JS8|PSK|DATA|DIG|JT/i.test(mode)?"599":"59";
   const notes=[prog+" "+ref+(name?" — "+name:""),f?(+f/1000).toFixed(3)+" MHz":"",mode].filter(Boolean).join(" · ");
   const today=new Date().toISOString().slice(0,10);
   const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
   const lat=parseFloat(t.dataset.lat),lng=parseFloat(t.dataset.lng);
-  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,
+  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,sig:prog,
     lat:isFinite(lat)?lat:undefined,lng:isFinite(lng)?lng:undefined});}
-// Classify an entry by its reference format, mirroring the ADIF export:
+// Classify an entry, mirroring the ADIF export. A recorded programme is
+// authoritative — a WWFF reference looks exactly like a POTA one, so guessing
+// from the format would file it wrongly. Entries logged before programmes were
+// recorded, and manual entries, still fall back to the reference's shape:
 // "/" means SOTA (association/summit), XX-NNNN means POTA, anything else
 // (or no ref at all) is a general contact.
-function logProgOf(o){const ref=(o.ref||"").trim();
+function logProgOf(o){
+  const sig=(o.sig||"").toUpperCase();
+  if(sig)return sig==="POTA"?"pota":sig==="SOTA"?"sota":"other";
+  const ref=(o.ref||"").trim();
   if(!ref)return"other";
   if(ref.includes("/"))return"sota";
   if(/^[A-Z]{1,6}-\d+$/i.test(ref))return"pota";
@@ -1344,7 +1409,11 @@ function exportLogADIF(){
     const time=String(o.time||"").replace(/\D/g,"").padStart(4,"0").slice(0,4);
     const freqMHz=o.freq?(+o.freq/1000).toFixed(6):"";
     const mode=(o.mode||"").toUpperCase().replace(/^DIG(I)?$/,"MFSK").replace(/^DATA$/,"MFSK");
-    const ref=(o.ref||"").trim(),isSota=ref.includes("/"),isPota=!isSota&&/^[A-Z]{1,6}-\d+$/i.test(ref);
+    // POTA_REF/SOTA_REF are programme-specific tags — only write them when the
+    // entry really belongs to that programme. Any other programme goes in the
+    // generic ADIF SIG/SIG_INFO pair, which is what WWFF, GMA and the rest use.
+    const ref=(o.ref||"").trim(),prog=logProgOf(o),sig=(o.sig||"").toUpperCase();
+    const isPota=prog==="pota",isSota=prog==="sota",isOther=ref&&!isPota&&!isSota&&sig;
     const qso=[tag("QSO_DATE",date),tag("TIME_ON",time),tag("CALL",o.station),
       tag("NAME",o.name||""),
       tag("FREQ",freqMHz),tag("MODE",mode),
@@ -1352,6 +1421,7 @@ function exportLogADIF(){
       PREFS.call?tag("MY_CALL",PREFS.call):"",
       PREFS.call?tag("MY_GRIDSQUARE",toGrid(GEO.lat,GEO.lng)):"",
       isPota?tag("POTA_REF",ref):"",isSota?tag("SOTA_REF",ref):"",
+      isOther?tag("SIG",sig):"",isOther?tag("SIG_INFO",ref):"",
       tag("COMMENT",o.notes),"<EOR>"].filter(Boolean).join("");
     if(qso!=="<EOR>")lines.push(qso);});
   downloadBlob("pileup-log.adi",lines.join("\r\n"),"text/plain");}
@@ -1419,10 +1489,10 @@ function mapPoints(){
   const pts=[];
   // Carry the full spot/log record so tapping a marker can preview everything
   // the Spots page shows, and log straight from the map.
-  if(mapLayer!=="log")for(const prog of["pota","sota"])
+  if(mapLayer!=="log")for(const prog of PROGS)
     for(const s of(SPOTS[prog].list||[]))
       if(isFinite(s.lat)&&isFinite(s.lng))
-        pts.push({kind:"spot",prog,call:s.call,ref:s.ref,name:s.name,loc:s.loc,mode:s.mode,
+        pts.push({kind:"spot",prog,sig:s.sig||"",call:s.call,ref:s.ref,name:s.name,loc:s.loc,mode:s.mode,
           freq:s.freq,comments:s.comments,when:s.when,lat:s.lat,lng:s.lng,
           color:BAND_COLOR[hamBandOf(s.freq)]||""});
   if(mapLayer!=="spots")for(const o of LOG)
@@ -1629,7 +1699,7 @@ function showMapPop(p){
   const md=p.mode?'<span class="badge">'+esc(p.mode)+'</span>':'';
   const freq=(isFinite(+p.freq)&&+p.freq)?'<span class="pop-freq">'+fmtFreq(+p.freq)+' <span class="u">'+freqUnit(+p.freq)+'</span></span>':'';
   const worked=p.kind==="spot"&&p.call&&_worked.has((p.call||"").toUpperCase().trim());
-  const ref=[esc(p.ref),esc(p.name)].filter(Boolean).join(" — ");
+  const ref=[esc(refText(p)),esc(p.name)].filter(Boolean).join(" — ");
   const when=p.kind==="spot"?(p.when?ageStr(+p.when):""):[esc(p.date),p.time?esc(p.time)+"Z":""].filter(Boolean).join(" ");
   const meta=[km+" km",brg+"°",when,p.kind==="spot"?esc(p.loc||""):""].filter(Boolean).join(" · ");
   let html='<div class="pop-top">'+freq+bandTag+'</div>'+
@@ -1646,13 +1716,13 @@ function showMapPop(p){
 }
 function closeMapPop(){const pop=document.getElementById("mapPop");if(pop){pop.classList.remove("show");pop.hidden=true;}}
 function logFromMapPoint(p){
-  const prog=(p.prog||spotProg).toUpperCase(),mode=p.mode||"",call=p.call||"",ref=p.ref||"",name=p.name||"",
+  const prog=(p.sig||p.prog||spotProg).toUpperCase(),mode=p.mode||"",call=p.call||"",ref=p.ref||"",name=p.name||"",
     f=(isFinite(+p.freq)&&+p.freq)?Math.round(+p.freq):"";
   const rst=/CW|FT8|FT4|RTTY|JS8|PSK|DATA|DIG|JT/i.test(mode)?"599":"59";
   const notes=[prog+" "+ref+(name?" — "+name:""),f?(+f/1000).toFixed(3)+" MHz":"",mode].filter(Boolean).join(" · ");
   const today=new Date().toISOString().slice(0,10);
   const dupe=call&&LOG.some(e=>e.station&&e.station.toUpperCase()===call.toUpperCase()&&e.date===today);
-  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,
+  openLog({title:"◆ Log "+(call||ref)+(dupe?" ⚠ dupe?":""),freq:f,mode,station:call,ref,rst,notes,sig:prog,
     lat:isFinite(p.lat)?p.lat:undefined,lng:isFinite(p.lng)?p.lng:undefined});
 }
 document.getElementById("mapPopClose").addEventListener("click",closeMapPop);
@@ -1693,7 +1763,11 @@ function parseADIF(text){
     return{station:f.CALL,date:d,time:(f.TIME_ON||"").slice(0,4),name:f.NAME||"",
       freq:f.FREQ?String(Math.round(parseFloat(f.FREQ)*1000)):"",
       mode:f.MODE||"",rst_sent:f.RST_SENT||"",rst_rcvd:f.RST_RCVD||"",
-      ref:f.POTA_REF||f.SOTA_REF||"",notes:f.COMMENT||""};
+      // SIG/SIG_INFO is how every programme other than POTA and SOTA records
+      // itself, so carry both the reference and which programme it belongs to.
+      ref:f.POTA_REF||f.SOTA_REF||f.SIG_INFO||"",
+      sig:f.POTA_REF?"POTA":f.SOTA_REF?"SOTA":(f.SIG||"").toUpperCase(),
+      notes:f.COMMENT||""};
   }).filter(Boolean);}
 function restoreFrom(text){
   let res=null;
