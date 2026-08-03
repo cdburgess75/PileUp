@@ -78,7 +78,7 @@ PileUp is a single responsive layout that runs from a 320 px phone up to a deskt
 | Area | Functionality |
 |---|---|
 | **Spot feed** | Live POTA + SOTA spots in compact expandable rows, auto-refreshed every 60 s (pauses when hidden or repeatedly failing) |
-| **xOTA programmes** | A third tab covering the long tail — WWFF, GMA, WWBOTA, HEMA, WOTA, ZLOTA, LLOTA, WWTOTA and more — via the [Spothole](https://spothole.app) aggregator, each row tagged with its programme. POTA and SOTA keep their own direct feeds so the core never depends on a third party |
+| **\*OTA programmes** | A third tab covering the long tail — WWFF, GMA, WWBOTA, HEMA, WOTA, ZLOTA, LLOTA, WWTOTA and more — via the [Spothole](https://spothole.app) aggregator, each row tagged with its programme. POTA and SOTA keep their own direct feeds so the core never depends on a third party |
 | **Filtering** | Band chips, mode chips (CW / Phone / Data), free-text search; sort by frequency or age; settings persist |
 | **Navigation aids** | Distance (km) and bearing (°) to every activation, computed from your saved coordinates |
 | **Worked tracking** | Logged callsigns struck through in the spot list until 0000 UTC; duplicate warning when logging |
