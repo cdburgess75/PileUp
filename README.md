@@ -78,6 +78,7 @@ PileUp is a single responsive layout that runs from a 320 px phone up to a deskt
 | Area | Functionality |
 |---|---|
 | **Spot feed** | Live POTA + SOTA spots in compact expandable rows, auto-refreshed every 60 s (pauses when hidden or repeatedly failing) |
+| **xOTA programmes** | A third tab covering the long tail — WWFF, GMA, WWBOTA, HEMA, WOTA, ZLOTA, LLOTA, WWTOTA and more — via the [Spothole](https://spothole.app) aggregator, each row tagged with its programme. POTA and SOTA keep their own direct feeds so the core never depends on a third party |
 | **Filtering** | Band chips, mode chips (CW / Phone / Data), free-text search; sort by frequency or age; settings persist |
 | **Navigation aids** | Distance (km) and bearing (°) to every activation, computed from your saved coordinates |
 | **Worked tracking** | Logged callsigns struck through in the spot list until 0000 UTC; duplicate warning when logging |
@@ -85,7 +86,7 @@ PileUp is a single responsive layout that runs from a 320 px phone up to a deskt
 | **Callsign lookup** | Type a call in the log form and press Enter to auto-fill the operator's name plus QTH/grid (free public database, keyless) |
 | **Hunter stats** | QSOs, unique calls, refs, active days; per-band bars and per-mode counts, live from the log |
 | **Map** | Full-screen world map (country borders worldwide + US state / Canadian province lines) + azimuthal "QTH radar" views of live spots and logged contacts — band-colored, pinch/zoom/pan, embedded, zero network needed |
-| **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 (`POTA_REF` / `SOTA_REF` included) |
+| **Export** | CSV (spreadsheet-ready) and ADIF 3.1.4 — `POTA_REF` / `SOTA_REF` for those programmes, standard `SIG` / `SIG_INFO` for every other one |
 | **Data safety** | One-tap JSON backup of everything; restore or import ADIF logs with duplicate-safe merging; persistent-storage request |
 | **Station tools** | Callsign + lat/lng + Maidenhead grid with GPS auto-locate |
 | **Spot yourself** | Activating? Compose your spot once — PileUp remembers it, so a QSY is one edit — then copy it and open POTA or SOTAwatch to post. Reference and band are sanity-checked as you type |
