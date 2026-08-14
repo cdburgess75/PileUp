@@ -7,6 +7,14 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.08.14.002
+
+**Changed**
+- The share buttons now use the standard share icon — the box with an arrow
+  pointing up out of it, the same mark iOS and most apps use — drawn as a tiny
+  inline SVG. The previous glyph (⇪) was actually the Caps Lock symbol, which
+  nobody reads as "share"
+
 ## 2026.08.14.001
 
 **Added**
