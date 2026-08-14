@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.08.14.001
+
+**Added**
+- **⇪ Share button in the header**, next to the text-size button: opens the
+  phone's share sheet (text, email, AirDrop, …) with the PileUp link, so
+  handing the app to another operator no longer means digging into Tools.
+  Where the browser has no share sheet (desktop Firefox), the link is copied
+  to the clipboard instead. The Tools → Share card and QR code stay put
+
 ## 2026.07.30.001
 
 **Added**

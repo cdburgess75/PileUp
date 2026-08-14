@@ -117,6 +117,7 @@
   .hbtn:hover{color:var(--ink);border-color:var(--amber-dim);}
   .hbtn:active{transform:translateY(1px);}
   #fontToggle .ab{font-size:10px;margin-left:1px;}
+  #shareTop{font-size:16px;color:var(--amber);}
   #themeToggle{font-size:18px;color:var(--sun);}          /* dark mode: orange sun */
   [data-theme="light"] #themeToggle{color:var(--moon);}   /* light mode: blue moon */
   .clocks{display:flex;gap:18px;align-items:flex-end;margin-top:9px;}
@@ -476,6 +477,7 @@
       <span class="sub">POTA · SOTA Operating Log</span>
       <div class="hdr-tools">
         <div class="hdr-btns">
+          <button class="hbtn" id="shareTop" title="Share PileUp" aria-label="Share PileUp">⇪</button>
           <button class="hbtn" id="fontToggle" title="Text size" aria-label="Change text size">A<span class="ab">a</span></button>
           <button class="hbtn" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme">☀</button>
         </div>
@@ -750,7 +752,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.07.30.001";
+const VERSION="2026.08.14.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1840,15 +1842,20 @@ document.getElementById("ssClear").addEventListener("click",()=>{
   SELF_FIELDS.forEach(id=>{document.getElementById(id).value="";});
   saveSelfSpot();renderSelfSpot();toast("Cleared");});
 
-document.getElementById("shareBtn").addEventListener("click",async()=>{
+/* One share path for the header button and the Tools card. navigator.share
+   opens the OS sheet (text, email, AirDrop…); where it doesn't exist —
+   desktop Firefox, mostly — the URL goes to the clipboard instead. */
+async function shareApp(){
   const url="https://cdburgess75.github.io/PileUp/";
   const share={title:"PileUp",text:"POTA & SOTA live spots + QSO log",url};
   try{
     if(navigator.share){await navigator.share(share);}
     else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url);toast("Link copied");}
     else{toast(url);}
-  }catch(e){}
-});
+  }catch(e){}   // AbortError when the user closes the share sheet — not an error
+}
+document.getElementById("shareBtn").addEventListener("click",shareApp);
+document.getElementById("shareTop").addEventListener("click",shareApp);
 
 /* ============ install / add-to-home ============ */
 // One-tap install where the browser allows it (Android/Chromium/desktop fire
