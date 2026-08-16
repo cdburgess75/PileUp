@@ -7,6 +7,13 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.08.16.001
+
+**Changed**
+- The country flag on spot rows is drawn at 16 px — the size of the frequency
+  digits — instead of inheriting the tiny state-text size, where it was an
+  unreadable speck. Row height is unchanged; the state abbreviation stays small
+
 ## 2026.08.14.003
 
 **Changed**

@@ -244,8 +244,12 @@
   .spotrow.clps .cmode .badge{margin-left:0;}
   .spotrow.clps .cband{display:flex;justify-content:center;}
   .spotrow.clps .cref{font-size:10.5px;color:var(--ink-dim);letter-spacing:.02em;white-space:nowrap;overflow:hidden;}
-  /* Flag + state ("🇺🇸 LA"). Emoji ignore color, so only the state text dims. */
+  /* Flag + state ("🇺🇸 LA"). Emoji ignore color, so only the state text dims.
+     The flag gets its own larger size — at the state text's 10.5px it is an
+     unreadable speck; 16px matches the frequency digits without adding row
+     height (the grid row is already that tall). */
   .spotrow.clps .cloc{font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;}
+  .cloc .fl,.meta .fl{font-size:16px;line-height:1;vertical-align:-2px;}
   .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
@@ -760,7 +764,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.08.14.003";
+const VERSION="2026.08.16.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1003,7 +1007,7 @@ function spotRowHTML(s){
   const worked=_worked.has((s.call||"").toUpperCase().trim());
   const cls=(stale?' stale':'')+(worked?' worked':'');
   const li=locInfo(s);
-  const locTag='<span class="cloc">'+(li?flagOf(li.iso)+(li.st?' '+esc(li.st):''):'')+'</span>';
+  const locTag='<span class="cloc">'+(li?'<span class="fl">'+flagOf(li.iso)+'</span>'+(li.st?' '+esc(li.st):''):'')+'</span>';
   if(!open){
     // Compact single line: tap the row to expand, tap ＋ to log directly.
     // Every field sits in its own grid column so the list reads as a table.
@@ -1020,7 +1024,7 @@ function spotRowHTML(s){
       '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span></div>';
   }
   // Expanded: the flag replaces the country half of the code — 🇺🇸 LA, not US-LA.
-  const meta=[esc(s.ref),esc(s.name),li?flagOf(li.iso)+" "+esc(li.st||s.loc):esc(s.loc)]
+  const meta=[esc(s.ref),esc(s.name),li?'<span class="fl">'+flagOf(li.iso)+'</span> '+esc(li.st||s.loc):esc(s.loc)]
     .filter(Boolean).join(" · ");
   const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
   const wkd=worked?'<span class="wkd">✓ worked</span>':'';
@@ -1103,7 +1107,7 @@ function renderSpots(){
   // (~20px flag + 6.6px/char of state text); it collapses to zero when no
   // spot in this list has a location.
   const locLen=Math.max(...list.map(s=>{const li=locInfo(s);return li?(li.st?li.st.length:0):-1;}));
-  const locPx=locLen>=0?Math.round(20+(locLen?locLen*6.6+3:0)):0;
+  const locPx=locLen>=0?Math.round(25+(locLen?locLen*6.6+3:0)):0;
   el.style.setProperty("--locw",locPx+"px");
   // Densify only when this list truly can't fit this width (14px mono ≈
   // 8.5px/char; 282/225/185 = roomy / dense / dense-no-mode column budgets,
