@@ -234,7 +234,7 @@
      The callsign column width (--callw) is set per render to the longest
      call in the list, so calls are never truncated and rows stay aligned. */
   .spotrow.clps{display:grid;align-items:center;gap:5px;padding:9px 8px 9px 10px;font-size:14px;
-    grid-template-columns:11px 72px var(--callw,9ch) 40px 48px var(--refw,52px) minmax(30px,1fr) 30px;}
+    grid-template-columns:11px 80px var(--callw,9ch) 40px 48px var(--refw,52px) var(--locw,0px) minmax(30px,1fr) 30px;}
   /* The frequency is right-aligned to its column edge, so this padding is the
      constant visual gap before the callsign — identical in every row/tier. */
   .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;padding-right:8px;}
@@ -244,6 +244,8 @@
   .spotrow.clps .cmode .badge{margin-left:0;}
   .spotrow.clps .cband{display:flex;justify-content:center;}
   .spotrow.clps .cref{font-size:10.5px;color:var(--ink-dim);letter-spacing:.02em;white-space:nowrap;overflow:hidden;}
+  /* Flag + state ("🇺🇸 LA"). Emoji ignore color, so only the state text dims. */
+  .spotrow.clps .cloc{font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;}
   .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
@@ -252,15 +254,19 @@
      the MHz unit (every row is MHz), slim the pill to its number, shrink
      gaps. Only in extremes does the mode badge yield. renderSpots measures
      the actual list against the actual width and sets these classes. */
-  .rows.tight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px 36px var(--refw,52px) minmax(22px,1fr) 26px;gap:4px;}
+  .rows.tight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px 36px var(--refw,52px) var(--locw,0px) minmax(22px,1fr) 26px;gap:4px;}
   .rows.tight .spotrow.clps .freq .u{display:none;}
   .rows.tight .spotrow.clps .tag.band .bu{display:none;}
   .rows.tight .spotrow.clps .tag.band{padding:2px 6px;}
-  .rows.xtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px var(--refw,52px) minmax(20px,1fr) 26px;}
+  .rows.xtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px var(--refw,52px) var(--locw,0px) minmax(20px,1fr) 26px;}
   .rows.xtight .spotrow.clps .cmode{display:none;}
   /* Last resort on tiny screens + long calls: the ref yields after the mode. */
-  .rows.xxtight .spotrow.clps{grid-template-columns:11px 54px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
+  .rows.xxtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px var(--locw,0px) minmax(20px,1fr) 26px;}
   .rows.xxtight .spotrow.clps .cref{display:none;}
+  /* Last resort (long portable call on a 320 px phone): the flag/state
+     column finally yields too — everything is still one expand away. */
+  .rows.xxxtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
+  .rows.xxxtight .spotrow.clps .cloc{display:none;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
@@ -754,7 +760,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.08.14.002";
+const VERSION="2026.08.14.003";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -815,7 +821,10 @@ function toGrid(lat,lng){
     String.fromCharCode(97+Math.floor((lo%2)*12),97+Math.floor((la%1)*24));
 }
 function hamBandOf(k){for(const b of HAM)if(k>=+b[1]&&k<=+b[2])return b[0];return"";}
-function fmtFreq(k){return k>=1000?(k/1000).toFixed(3):k.toFixed(k%1?2:0);}
+/* MHz to 4 decimals — spots carry 100 Hz precision (a CW spot at 14035.1 kHz
+   is 14.0351, not 14.035) — with one trailing zero trimmed so the common
+   whole-kHz spot still reads 14.285 rather than 14.2850. */
+function fmtFreq(k){return k>=1000?(k/1000).toFixed(4).replace(/0$/,""):k.toFixed(k%1?2:0);}
 function freqUnit(k){return k>=1000?"MHz":"kHz";}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function attr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;");}
@@ -828,6 +837,32 @@ function ageStr(ms){if(!isFinite(ms))return"—";
    already-zoned value passes through untouched. */
 function parseUTC(v){const s=String(v||"").trim();if(!s)return new Date(NaN);
   return new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(s)?s:s+"Z");}
+/* Country flag + state for a spot's location. POTA sends an ISO "CC-SS"
+   locationDesc ("US-LA", "CA-ON", multi-state trails comma-separated); SOTA
+   sends only its association code, which is callsign-prefix based, so the
+   table below maps prefix → ISO country (first match wins — longer prefixes
+   are listed before their one-letter parents). Unknown codes simply get no
+   flag; never guess a wrong country. */
+const SOTA_ISO=[["KH6","US"],["KL","US"],["KP4","US"],["W","US"],["K","US"],
+ ["VE","CA"],["VY","CA"],["VO","CA"],["XE","MX"],
+ ["GW","GB"],["GM","GB"],["GI","GB"],["GD","GB"],["GJ","GB"],["GU","GB"],["G","GB"],["EI","IE"],
+ ["FL","FR"],["F","FR"],["DM","DE"],["DL","DE"],["OE","AT"],["HB0","LI"],["HB","CH"],
+ ["CT3","PT"],["CT","PT"],["CU","PT"],["EA8","ES"],["EA","ES"],["I","IT"],["SV","GR"],
+ ["ON","BE"],["PA","NL"],["LX","LU"],["OZ","DK"],["LA","NO"],["JW","NO"],["SM","SE"],["OH","FI"],["TF","IS"],
+ ["SP","PL"],["OK","CZ"],["OM","SK"],["HA","HU"],["S5","SI"],["9A","HR"],["E7","BA"],
+ ["YU","RS"],["Z3","MK"],["LZ","BG"],["YO","RO"],["UT","UA"],["YL","LV"],["LY","LT"],["ES","EE"],
+ ["JA","JP"],["HL","KR"],["BV","TW"],["VU","IN"],["HS","TH"],["9V","SG"],["YB","ID"],["DU","PH"],["9M","MY"],
+ ["VK","AU"],["ZL","NZ"],["ZS","ZA"],["PY","BR"],["LU","AR"],["CE","CL"],["HK","CO"],["OA","PE"],["HI","DO"],
+ ["4X","IL"],["TA","TR"],["5B","CY"],["9H","MT"],["C3","AD"],["OY","FO"],["OX","GL"]];
+function locInfo(s){
+  const loc=String(s.loc||"").trim();if(!loc)return null;
+  const m=/^([A-Z]{2})-([A-Z0-9]{1,3})(,|$)/.exec(loc);
+  if(m)return{iso:m[1],st:m[2]+(m[3]===","?"+":"")};   // trailing + = spans states
+  const p=SOTA_ISO.find(e=>loc.startsWith(e[0]));
+  return p?{iso:p[1],st:""}:null;
+}
+// ISO 3166 code → flag emoji via regional-indicator letters (A = U+1F1E6).
+function flagOf(iso){return iso.replace(/[A-Z]/g,c=>String.fromCodePoint(0x1F1A5+c.charCodeAt(0)));}
 /* Great-circle distance in km (haversine) and initial bearing in degrees
    true (0-359), both from decimal-degree coordinates. */
 function haversine(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
@@ -958,7 +993,7 @@ function spotRowHTML(s){
   const ms=+new Date(s.when),age=ageStr(ms),stale=Date.now()-ms>45*60000;
   const band=hamBandOf(s.freq),md=s.mode?'<span class="badge">'+esc(s.mode)+'</span>':'';
   const key=spotKey(s),open=_expandedSpots.has(key);
-  const da='data-act="spotlog" data-key="'+attr(key)+'" data-f="'+attr(Math.round(s.freq))+'" data-call="'+attr(s.call)+
+  const da='data-act="spotlog" data-key="'+attr(key)+'" data-f="'+attr(Math.round(s.freq*10)/10)+'" data-call="'+attr(s.call)+
     '" data-ref="'+attr(s.ref)+'" data-name="'+attr(s.name)+'" data-md="'+attr(s.mode)+'" data-prog="'+spotProg+'"'+
     (isFinite(s.lat)&&isFinite(s.lng)?' data-lat="'+s.lat+'" data-lng="'+s.lng+'"':'');
   const bc=band&&BAND_COLOR[band]?'style="--bc:'+BAND_COLOR[band]+';--bt:'+bandInk(BAND_COLOR[band])+'"':'';
@@ -967,6 +1002,8 @@ function spotRowHTML(s){
     '<span class="bu"> m</span></span>':'<span class="tag">--</span>';
   const worked=_worked.has((s.call||"").toUpperCase().trim());
   const cls=(stale?' stale':'')+(worked?' worked':'');
+  const li=locInfo(s);
+  const locTag='<span class="cloc">'+(li?flagOf(li.iso)+(li.st?' '+esc(li.st):''):'')+'</span>';
   if(!open){
     // Compact single line: tap the row to expand, tap ＋ to log directly.
     // Every field sits in its own grid column so the list reads as a table.
@@ -978,10 +1015,13 @@ function spotRowHTML(s){
       '<span class="cmode">'+md+'</span>'+
       '<span class="cband">'+bandTag+'</span>'+
       '<span class="cref">'+esc(s.ref||"")+'</span>'+
+      locTag+
       '<span class="time">'+age+'</span>'+
       '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span></div>';
   }
-  const meta=[esc(s.ref),esc(s.name),esc(s.loc)].filter(Boolean).join(" · ");
+  // Expanded: the flag replaces the country half of the code — 🇺🇸 LA, not US-LA.
+  const meta=[esc(s.ref),esc(s.name),li?flagOf(li.iso)+" "+esc(li.st||s.loc):esc(s.loc)]
+    .filter(Boolean).join(" · ");
   const cmt=s.comments?'<div class="meta" style="color:var(--ink-dim)">"'+esc(s.comments)+'"</div>':'';
   const wkd=worked?'<span class="wkd">✓ worked</span>':'';
   let distStr='';
@@ -1059,16 +1099,23 @@ function renderSpots(){
   const refLen=Math.max(0,...list.map(s=>String(s.ref||"").length));
   const refPx=refLen?Math.round(refLen*6.6+4):0;
   el.style.setProperty("--refw",refPx+"px");
+  // The flag/state column sizes to the longest state code in the list
+  // (~20px flag + 6.6px/char of state text); it collapses to zero when no
+  // spot in this list has a location.
+  const locLen=Math.max(...list.map(s=>{const li=locInfo(s);return li?(li.st?li.st.length:0):-1;}));
+  const locPx=locLen>=0?Math.round(20+(locLen?locLen*6.6+3:0)):0;
+  el.style.setProperty("--locw",locPx+"px");
   // Densify only when this list truly can't fit this width (14px mono ≈
-  // 8.5px/char; 274/217/177 = roomy / dense / dense-no-mode column budgets,
+  // 8.5px/char; 282/225/185 = roomy / dense / dense-no-mode column budgets,
   // all including the 8px freq→callsign breathing gap and the ref gap).
-  // Shed order under pressure: slim units → mode badge → ref. The callsign
-  // and band pill survive every tier.
+  // Shed order under pressure: slim units → mode badge → ref → flag/state.
+  // The callsign and band pill survive every tier.
   if(el.clientWidth>0){
     const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
-    el.classList.toggle("tight",274+callPx+refPx>avail);
-    el.classList.toggle("xtight",217+callPx+refPx>avail);
-    el.classList.toggle("xxtight",177+callPx+refPx>avail);
+    el.classList.toggle("tight",282+callPx+refPx+locPx>avail);
+    el.classList.toggle("xtight",225+callPx+refPx+locPx>avail);
+    el.classList.toggle("xxtight",185+callPx+refPx+locPx>avail);
+    el.classList.toggle("xxxtight",175+callPx+locPx>avail);
   }
   el.innerHTML=list.map(spotRowHTML).join("");
 }

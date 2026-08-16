@@ -7,6 +7,19 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.08.14.003
+
+**Changed**
+- Spot frequencies now show the fourth decimal (100 Hz) — a CW spot at
+  14035.1 kHz reads **14.0351**, where before the last digit was silently
+  dropped (SOTA reports it on most spots). Whole-kHz spots still read 14.285.
+  Logging a spot also carries the tenth-kHz into the QSO form now
+- Every spot row shows a **country flag plus state/province** — 🇺🇸 LA,
+  🇨🇦 ON — parsed from POTA's location codes (a trail through several states
+  reads 🇺🇸 MS+). SOTA spots get their country flag mapped from the
+  association code. On very narrow screens the column is the last detail to
+  yield, after the reference
+
 ## 2026.08.14.002
 
 **Changed**
