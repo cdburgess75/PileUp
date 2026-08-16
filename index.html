@@ -230,47 +230,38 @@
   .spotrow:active{border-color:var(--amber-dim);background:var(--panel2);}
   .exp-tgl{color:var(--ink-dim);font-size:8px;line-height:1;flex-shrink:0;width:12px;text-align:center;
     transition:transform .15s ease;user-select:none;}
-  /* Fixed grid so freq / call / mode / band / age / ＋ align down the list.
-     The callsign column width (--callw) is set per render to the longest
-     call in the list, so calls are never truncated and rows stay aligned. */
-  .spotrow.clps{display:grid;align-items:center;gap:5px;padding:9px 8px 9px 10px;font-size:14px;
-    grid-template-columns:11px 80px var(--callw,9ch) 40px 48px var(--refw,52px) var(--locw,0px) minmax(30px,1fr) 30px;}
-  /* The frequency is right-aligned to its column edge, so this padding is the
-     constant visual gap before the callsign — identical in every row/tier. */
+  /* Two-line rows. Line 1: frequency, callsign, band pill. Line 2 always has
+     room for mode, reference, flag/state, and age — nothing sheds with width
+     any more, so those details appear on every row on every screen (this
+     replaced the old column-shedding tiers, which hid the ref and flag
+     exactly when a long callsign made space scarce). The ▶ and ＋ span both
+     lines; the frequency column is fixed so frequencies align down the list. */
+  .spotrow.clps{display:grid;align-items:center;column-gap:6px;row-gap:3px;padding:8px 8px 8px 10px;font-size:14px;
+    grid-template-columns:11px 80px minmax(0,1fr) auto 34px;}
+  /* Explicit placement: row-spanning items otherwise auto-place into the
+     first free column of row 1, which put the ＋ under the frequency. */
+  .spotrow.clps .exp-tgl{grid-row:1/3;grid-column:1;}
+  .spotrow.clps .act.log{grid-row:1/3;grid-column:5;}
+  .spotrow.clps .freq{grid-row:1;grid-column:2;}
+  .spotrow.clps .st{grid-row:1;grid-column:3;}
+  .spotrow.clps .cband{grid-row:1;grid-column:4;}
+  .spotrow.clps .sub{grid-row:2;}
+  /* Right-aligned to its column edge: constant visual gap before the callsign. */
   .spotrow.clps .freq{font-size:15px;white-space:nowrap;text-align:right;padding-right:8px;}
   .spotrow.clps .freq .u{display:inline;font-size:8px;margin-left:2px;letter-spacing:.08em;}
-  .spotrow.clps .st{font-size:14px;white-space:nowrap;}
-  .spotrow.clps .cmode{display:flex;justify-content:flex-start;}
-  .spotrow.clps .cmode .badge{margin-left:0;}
-  .spotrow.clps .cband{display:flex;justify-content:center;}
-  .spotrow.clps .cref{font-size:10.5px;color:var(--ink-dim);letter-spacing:.02em;white-space:nowrap;overflow:hidden;}
-  /* Flag + state ("🇺🇸 LA"). Emoji ignore color, so only the state text dims.
-     The flag gets its own larger size — at the state text's 10.5px it is an
-     unreadable speck; 16px matches the frequency digits without adding row
-     height (the grid row is already that tall). */
-  .spotrow.clps .cloc{font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;}
+  .spotrow.clps .st{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .spotrow.clps .cband{display:flex;justify-content:flex-end;}
+  .spotrow.clps .sub{grid-column:2/5;display:flex;align-items:center;gap:7px;min-width:0;
+    font-size:10.5px;color:var(--ink-dim);white-space:nowrap;}
+  .spotrow.clps .sub .badge{margin-left:0;}
+  .spotrow.clps .sub .cref{letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;}
+  .spotrow.clps .sub .time{margin-left:auto;font-size:11px;flex-shrink:0;}
+  /* Flag + state ("🇺🇸 LA"). Emoji ignore color, so only the state text dims;
+     the flag draws at 16px — frequency-digit size — to stay legible. */
+  .spotrow.clps .cloc{flex-shrink:0;}
   .cloc .fl,.meta .fl{font-size:16px;line-height:1;vertical-align:-2px;}
-  .spotrow.clps .time{font-size:11px;text-align:right;}
   .spotrow.clps .tag.band{font-size:9px;padding:2px 7px;}
   .spotrow.clps .act.log{font-size:13px;padding:2px 0;line-height:1.3;text-align:center;}
-  /* Full callsigns AND band pills are non-negotiable. When a long call means
-     the roomy layout can't fit, go dense instead of dropping the pill: hide
-     the MHz unit (every row is MHz), slim the pill to its number, shrink
-     gaps. Only in extremes does the mode badge yield. renderSpots measures
-     the actual list against the actual width and sets these classes. */
-  .rows.tight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px 36px var(--refw,52px) var(--locw,0px) minmax(22px,1fr) 26px;gap:4px;}
-  .rows.tight .spotrow.clps .freq .u{display:none;}
-  .rows.tight .spotrow.clps .tag.band .bu{display:none;}
-  .rows.tight .spotrow.clps .tag.band{padding:2px 6px;}
-  .rows.xtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px var(--refw,52px) var(--locw,0px) minmax(20px,1fr) 26px;}
-  .rows.xtight .spotrow.clps .cmode{display:none;}
-  /* Last resort on tiny screens + long calls: the ref yields after the mode. */
-  .rows.xxtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px var(--locw,0px) minmax(20px,1fr) 26px;}
-  .rows.xxtight .spotrow.clps .cref{display:none;}
-  /* Last resort (long portable call on a 320 px phone): the flag/state
-     column finally yields too — everything is still one expand away. */
-  .rows.xxxtight .spotrow.clps{grid-template-columns:11px 62px var(--callw,9ch) 36px minmax(20px,1fr) 26px;}
-  .rows.xxxtight .spotrow.clps .cloc{display:none;}
   .spotrow.exp{padding-left:24px;}
   .spotrow.exp .exp-tgl{position:absolute;left:8px;top:16px;transform:rotate(90deg);color:var(--amber);}
   .spotrow.worked{opacity:.62;}
@@ -764,7 +755,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.08.16.001";
+const VERSION="2026.08.16.002";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
@@ -1007,21 +998,20 @@ function spotRowHTML(s){
   const worked=_worked.has((s.call||"").toUpperCase().trim());
   const cls=(stale?' stale':'')+(worked?' worked':'');
   const li=locInfo(s);
-  const locTag='<span class="cloc">'+(li?'<span class="fl">'+flagOf(li.iso)+'</span>'+(li.st?' '+esc(li.st):''):'')+'</span>';
+  const locTag=li?'<span class="cloc"><span class="fl">'+flagOf(li.iso)+'</span>'+(li.st?' '+esc(li.st):'')+'</span>':'';
   if(!open){
-    // Compact single line: tap the row to expand, tap ＋ to log directly.
-    // Every field sits in its own grid column so the list reads as a table.
+    // Two lines: tap the row to expand, tap ＋ to log directly. Line 2 carries
+    // mode · ref · flag/state with the age at the right edge.
     return '<div class="row spotrow clps'+cls+'" '+da+' role="button" tabindex="0"'+
       ' aria-expanded="false" aria-label="Expand '+attr(s.call||s.ref)+'">'+
       '<span class="exp-tgl">▶</span>'+
       '<span class="freq">'+fmtFreq(s.freq)+'<span class="u">'+freqUnit(s.freq)+'</span></span>'+
       '<span class="st"><span class="callsign">'+esc(s.call||"?")+'</span></span>'+
-      '<span class="cmode">'+md+'</span>'+
       '<span class="cband">'+bandTag+'</span>'+
-      '<span class="cref">'+esc(s.ref||"")+'</span>'+
-      locTag+
-      '<span class="time">'+age+'</span>'+
-      '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span></div>';
+      '<span class="act log" role="button" tabindex="0" aria-label="Log '+attr(s.call)+'">＋</span>'+
+      '<span class="sub">'+md+
+      (s.ref?'<span class="cref">'+esc(s.ref)+'</span>':'')+locTag+
+      '<span class="time">'+age+'</span></span></div>';
   }
   // Expanded: the flag replaces the country half of the code — 🇺🇸 LA, not US-LA.
   const meta=[esc(s.ref),esc(s.name),li?'<span class="fl">'+flagOf(li.iso)+'</span> '+esc(li.st||s.loc):esc(s.loc)]
@@ -1093,34 +1083,9 @@ function renderSpots(){
         'No '+PROG+' spots match your filter.';
     el.innerHTML='<div class="empty">'+m+'</div>';return;
   }
-  // Size the callsign column to the longest call in the list (monospace, so
-  // character count is exact width): full callsigns always visible, columns
-  // still identical across rows.
-  const maxLen=Math.max(4,...list.map(s=>String(s.call||"?").length));
-  el.style.setProperty("--callw",(maxLen+0.6)+"ch");
-  // The ref column sizes the same way: to the longest ref in the list
-  // (10.5px mono ≈ 6.6px/char), so refs line up and never truncate.
-  const refLen=Math.max(0,...list.map(s=>String(s.ref||"").length));
-  const refPx=refLen?Math.round(refLen*6.6+4):0;
-  el.style.setProperty("--refw",refPx+"px");
-  // The flag/state column sizes to the longest state code in the list
-  // (~20px flag + 6.6px/char of state text); it collapses to zero when no
-  // spot in this list has a location.
-  const locLen=Math.max(...list.map(s=>{const li=locInfo(s);return li?(li.st?li.st.length:0):-1;}));
-  const locPx=locLen>=0?Math.round(25+(locLen?locLen*6.6+3:0)):0;
-  el.style.setProperty("--locw",locPx+"px");
-  // Densify only when this list truly can't fit this width (14px mono ≈
-  // 8.5px/char; 282/225/185 = roomy / dense / dense-no-mode column budgets,
-  // all including the 8px freq→callsign breathing gap and the ref gap).
-  // Shed order under pressure: slim units → mode badge → ref → flag/state.
-  // The callsign and band pill survive every tier.
-  if(el.clientWidth>0){
-    const callPx=(maxLen+0.6)*8.5,avail=el.clientWidth-22;
-    el.classList.toggle("tight",282+callPx+refPx+locPx>avail);
-    el.classList.toggle("xtight",225+callPx+refPx+locPx>avail);
-    el.classList.toggle("xxtight",185+callPx+refPx+locPx>avail);
-    el.classList.toggle("xxxtight",175+callPx+locPx>avail);
-  }
+  // Two-line rows: the callsign gets flexible width on line 1 and everything
+  // else lives on line 2, so no per-list column measurement or width-shedding
+  // tiers are needed any more.
   el.innerHTML=list.map(spotRowHTML).join("");
 }
 

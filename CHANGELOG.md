@@ -7,6 +7,18 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.08.16.002
+
+**Changed**
+- Spot rows are now **two lines**: frequency, callsign and band pill on the
+  first; mode, reference, **flag + state**, and age on the second. The old
+  single-line layout shed columns when space ran short, which is exactly when
+  a long callsign or a narrow screen made the flag and reference vanish —
+  now they appear on every row at every width. The ＋ log button spans both
+  lines, so it's a bigger tap target too
+- Spots whose feed entry carries no location still show no flag — PileUp
+  won't guess a country
+
 ## 2026.08.16.001
 
 **Changed**
