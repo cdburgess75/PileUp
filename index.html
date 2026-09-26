@@ -79,7 +79,10 @@
   .wrap{max-width:760px;margin:0 auto;padding:0 14px 96px;}
 
   header{position:sticky;top:0;z-index:30;margin:0 -14px 10px;padding:12px 16px 8px;
-    padding-top:max(12px,env(safe-area-inset-top));
+    /* iOS 26 blurs content just below the status bar (its scroll-edge effect),
+       so on notched phones start ~half an inset lower to clear that band.
+       No inset (desktop/Android) → unchanged 12px. */
+    padding-top:max(12px,calc(env(safe-area-inset-top) * 1.5));
     background:var(--header-bg);border-bottom:1px solid var(--fill);
     box-shadow:0 6px 18px rgba(0,0,0,.5);}
   /* Right padding reserves room for the absolutely-positioned theme glyph so
@@ -101,7 +104,7 @@
   .tgl-btn.on{color:var(--amber);border-color:var(--amber-dim);}
   /* Font-size + theme buttons pinned to the header's top-right. Rounded tiles
      with a panel background so they read clearly as controls. */
-  .hdr-tools{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;
+  .hdr-tools{position:absolute;top:max(10px,calc(env(safe-area-inset-top) * 1.5));right:12px;
     display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:3;}
   .hdr-btns{display:flex;gap:6px;}
   header.min .hdr-tools{display:none;}
@@ -753,7 +756,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.09.26.001";
+const VERSION="2026.09.26.002";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],

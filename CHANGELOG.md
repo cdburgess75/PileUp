@@ -7,6 +7,15 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.09.26.002
+
+**Fixed**
+- The PILEUP title and header buttons looked blurred on iPhone. iOS 26 blurs
+  content in a band just below the status bar, and the header started right
+  at the safe-area edge. On phones with a notch or Dynamic Island the header
+  content now starts lower, clear of that band; desktop and Android are
+  unchanged.
+
 ## 2026.09.26.001
 
 **Changed**
