@@ -7,6 +7,12 @@ cache name, and the README badge (enforced by the test suite). Releases
 before 2026.07.15.5 used a trailing letter; 2026.07.15.5 itself predates
 the zero-padding.
 
+## 2026.09.26.001
+
+**Changed**
+- Removed the neon glow (blurry `text-shadow`) from the PILEUP title and the
+  callsign beneath it in the header; both now render as crisp flat text.
+
 ## 2026.08.16.002
 
 **Changed**

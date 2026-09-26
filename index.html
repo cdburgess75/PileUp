@@ -45,7 +45,6 @@
     --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Roboto Mono",monospace;
     --header-bg:linear-gradient(180deg,#0b2016 0%,#000000 62%);
   }
-  .brand h1{text-shadow:0 0 14px rgba(var(--glow),.9),0 0 32px rgba(var(--glow),.5),0 0 64px rgba(var(--glow),.25);}
   .clock .val{text-shadow:0 0 12px rgba(255,176,32,.9),0 0 28px rgba(255,176,32,.5);}
   .clock.local .val{text-shadow:0 0 12px rgba(56,207,255,.9),0 0 28px rgba(56,207,255,.5);}
   .ident-call{text-shadow:0 0 10px rgba(var(--glow),.75),0 0 22px rgba(var(--glow),.35);}
@@ -91,8 +90,7 @@
   .brandcol{display:flex;flex-direction:column;gap:3px;}
   .brandcol h1{line-height:1;}
   .brandline{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;line-height:1;}
-  .hdrcall{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--amber);
-    text-shadow:0 0 8px rgba(var(--glow),.6);}
+  .hdrcall{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--amber);}
   .hdrcall:empty{display:none;}
   .hdrver{font-size:8px;letter-spacing:.14em;color:var(--amber-dim);line-height:1;white-space:nowrap;}
   .hdr-controls{display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;}
@@ -755,7 +753,7 @@
 
 <script>
 "use strict";
-const VERSION="2026.08.16.002";
+const VERSION="2026.09.26.001";
 
 /* ============ reference data ============ */
 const HAM=[["160 m","1800","2000"],["80 m","3500","4000"],
